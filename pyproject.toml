@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aicl-language"
+version = "0.1.0"
+description = "A research prototype of an AI-first compact programming language"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Edwin Sam K Reju" }]
+keywords = ["programming-language", "compiler", "AI", "intermediate-representation"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Compilers",
+]
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+bench = ["tiktoken>=0.7"]
+
+[project.scripts]
+aicl = "aicl.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
