@@ -1,20 +1,24 @@
 """Canonical typed IR and deterministic module hashing."""
 from __future__ import annotations
-import hashlib, json
+import hashlib,json
 from typing import Any
 from .semantics import check_program
-from .syntax import Expr, Program
+from .syntax import Expr,Program
 
 def _canonical_json(value:Any)->str:
     return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(",",":"))
 
-def _node(e:Expr,fn:str,path:str,type_path:str,types:dict[str,str])->dict[str,Any]:
+def _node(e:Expr,fn:str,path:str,type_path:str,types:dict[str,str],*,injected_first_argument=False)->dict[str,Any]:
     out={"id":f"n:{fn}:{path}","op":e.kind}
     if e.value is not None: out["value"]=e.value
     if type_path in types: out["type"]=types[type_path]
     if e.children:
         names=["left","right"] if e.kind in {"binary","pipe"} else ["operand"] if e.kind=="unary" else [f"arg{i}" for i in range(len(e.children))]
-        out["children"]=[_node(child,fn,f"{path}/{names[i]}",f"{type_path}/{names[i]}",types) for i,child in enumerate(e.children)]
+        children=[]
+        for i,child in enumerate(e.children):
+            child_type=f"{type_path}/arg{i+1}" if injected_first_argument else f"{type_path}/{names[i]}"
+            children.append(_node(child,fn,f"{path}/{names[i]}",child_type,types,injected_first_argument=(e.kind=="pipe" and i==1 and child.kind=="call")))
+        out["children"]=children
     return out
 
 def canonical_ir(program:Program)->dict[str,Any]:
