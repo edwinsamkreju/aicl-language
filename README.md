@@ -2,17 +2,11 @@
 
 **A research-led prototype of a compact, typed programming representation designed for AI coding agents.**
 
-Copyright © 2026 Edwin Sam K Reju. All rights reserved. See [COPYRIGHT.md](COPYRIGHT.md) for the copyright and licence status.
+Copyright © 2026 Edwin Sam K Reju. All rights reserved. See [COPYRIGHT.md](COPYRIGHT.md).
 
-AICL separates the model-facing compact syntax (**AICL-C**) from the compiler-facing canonical typed representation (**AICL-IR**). This repository implements the first narrow experiment: a runnable AICL-C 0.1 subset, a typed canonical JSON IR, stable node identifiers, hash-guarded patches, a bounded reference interpreter, tests, and an optional token-count harness.
+AICL separates the model-facing compact syntax (**AICL-C**) from the compiler-facing canonical typed representation (**AICL-IR**). This repository contains the AICL 0.1 research prototype: a parser, static type checker, typed JSON IR, deterministic module hashing, hash-guarded source patching, bounded reference interpreter, CLI, examples, tests, and a tokenizer-count harness.
 
-> **Status:** early research prototype (0.1.0). This is not a production compiler or secure general-purpose runtime. The report's proposed token-efficiency targets have not yet been demonstrated.
-
-## Why this repository starts small
-
-The project report recommends validating one central hypothesis first: can an AI system complete equivalent programming tasks with fewer **total tokenizer-measured workflow tokens** in AICL than in Python or TypeScript, without reducing correctness? A shorter source file alone is not sufficient. Failed attempts, debugging, patches, and retries must count.
-
-The current implementation is intentionally narrow and dependency-free. Its reference interpreter has no filesystem, network, process, credential, or device operations.
+> **Status:** early research prototype (0.1.0). Not a production compiler or secure general-purpose runtime. The report's proposed token-efficiency targets have not been demonstrated.
 
 ## Quick start
 
@@ -33,7 +27,7 @@ aicl check examples/clamp.aicl
 aicl run examples/clamp.aicl --function clamp --args '[15, 0, 10]'
 ```
 
-Expected result:
+Expected output:
 
 ```json
 {"result": 10}
@@ -45,31 +39,27 @@ Inspect canonical typed IR:
 aicl ir examples/clamp.aicl
 ```
 
-## AICL-C 0.1 example
+## AICL-C 0.1 examples
 
 ```aicl
 aicl 0.1
 f clamp(x:i64,lo:i64,hi:i64)->i64 !pure = max(lo,min(hi,x))
 ```
 
-A small data transformation uses pipeline syntax. The value on the left of `|>` is injected as the first argument of the operation on the right:
+Pipeline calls inject the left-hand value as the first argument:
 
 ```aicl
 aicl 0.1
 f clean(xs:List[Str])->List[Str] !pure = xs |> map(trim) |> filter(not_empty) |> unique
 ```
 
-Run it with:
+Run:
 
 ```bash
 aicl run examples/text_pipeline.aicl --function clean --args '[[" A ", "", "B", "A", " B "]]'
 ```
 
-Expected result:
-
-```json
-{"result": ["A", "B"]}
-```
+Expected output: `{"result": ["A", "B"]}`.
 
 ## Implemented subset
 
@@ -81,14 +71,12 @@ Expected result:
 - Built-ins: `min`, `max`, `trim`, `not_empty`, `unique`, `map`, `filter`, `abs`, and `len`.
 - Deterministic typed JSON IR and SHA-256 module hash.
 - Stable prototype IDs based on declaration and expression paths.
-- Atomic source patching with a base-hash check and type validation.
-- Bounded reference interpreter with step and call-depth budgets.
+- Atomic source patching with a base-hash check and full candidate type validation.
+- Bounded reference interpreter with execution-step, call-depth, and collection-size limits.
 
-See [the design decision](docs/decisions/0001-mvp-boundary.md) for current scope and deferred work.
+## Patch protocol
 
-## Patch protocol example
-
-First obtain the current module hash from `aicl ir examples/patchable.aicl`. Then create a patch file:
+Get the current module hash from `aicl ir examples/patchable.aicl`, then create a JSON patch:
 
 ```json
 {
@@ -99,51 +87,49 @@ First obtain the current module hash from `aicl ir examples/patchable.aicl`. The
 }
 ```
 
-Apply it with:
-
-```bash
-aicl patch examples/patchable.aicl patch.json
-```
-
-Only `replace_body` is supported in this prototype. The patch is applied only if the base hash matches and the complete candidate module parses and type-checks. Failed validation leaves the source file unchanged.
+Apply it with `aicl patch examples/patchable.aicl patch.json`. Only `replace_body` is supported. The patch is applied only if the base hash matches and the candidate module parses and type-checks. Failed validation leaves the source file unchanged.
 
 ## Token-count experiment
 
-Install the optional benchmark dependency:
+Install the optional benchmark dependency and run:
 
 ```bash
 python -m pip install -e '.[bench]'
 python benchmarks/compare_tokens.py --encoding cl100k_base
 ```
 
-The script reports source token counts for paired examples using the explicitly selected `tiktoken` encoding. This is only a source-size measurement. It does **not** measure task success, total agent workflow tokens, retries, runtime, or security. `cl100k_base` is not a substitute for the tokenizer of every tested model. Do not generalise results beyond the encoding and tasks reported.
+This reports source token counts for paired examples using the selected `tiktoken` encoding. It does **not** measure task success, total agent workflow tokens, retries, runtime, or security. Do not generalise results beyond the encoding and tasks reported. A larger benchmark with equivalent tasks, hidden tests, repeated trials, and full repair-loop accounting is still required.
 
-The next benchmark increment is a 30–50 task corpus with pinned models/tokenizers, repeated trials, hidden tests, repair limits, and Python/TypeScript baselines.
-
-## Repository map
+## Repository structure
 
 ```text
-src/aicl/             Parser, type checker, typed IR, interpreter, patcher, CLI
-spec/                 Formal grammar and IR schema
-examples/             Small AICL-C programs
-benchmarks/           Paired baseline tasks and tokenizer harness
-tests/                Conformance and transactional patch tests
-docs/decisions/       Architecture decision records
-.github/workflows/    Continuous integration
+src/aicl/                 Parser, type checker, typed IR, interpreter, patcher, CLI
+spec/                     AICL-C grammar and draft AICL-IR JSON schema
+examples/                 Runnable AICL-C programs
+tests/                    Parser, type, interpreter, IR, and patch tests
+benchmarks/               Python baseline and optional tokenizer harness
+docs/decisions/            Architecture decision records
+docs/INITIAL_BACKLOG.md    Engineering backlog
+docs/REPORT_MAPPING.md     Proposal-to-implementation status
+docs/TEST_REPORT.md        Initial test record
+.github/workflows/         GitHub Actions CI
+CONTRIBUTING.md            Contribution guidelines
+SECURITY.md                Prototype security limitations
+COPYRIGHT.md               Copyright and licence status
 ```
 
-## Important limitations
+## Roadmap and limitations
 
-The current prototype does not implement imports, records, generics, tensor shapes, async/streams, non-pure effects, capability grants, host calls, a binary IR encoding, native-token vocabulary, compiler lowering, MLIR/StableHLO/LLVM/Wasm backends, or a hardened sandbox. These remain design or research tasks—not implemented features.
+See [ROADMAP.md](ROADMAP.md) and [docs/INITIAL_BACKLOG.md](docs/INITIAL_BACKLOG.md). The current prototype does not implement imports, records, generics, tensor shapes, async/streams, non-pure effects, capability grants, host calls, a binary IR encoding, native-token vocabulary, compiler lowering, MLIR/StableHLO/LLVM/Wasm backends, or a hardened sandbox. These remain future research and engineering tasks.
 
-The repository name is a working project name. Trademark, package-name, and domain availability have not been assessed. A project licence has deliberately not been selected yet; decide it before public redistribution or accepting contributions under a chosen licence.
+The report's central recommendation is preserved: validate token efficiency and correctness on a narrow prototype before investing in the full compiler/runtime. No token-savings claim is made.
 
-## Copyright and licence status
+## Copyright and licence
 
-Copyright © 2026 Edwin Sam K Reju. All rights reserved.
+**Copyright © 2026 Edwin Sam K Reju. All rights reserved.**
 
-This copyright notice records project attribution. It does not itself grant permission to copy, modify, publish, distribute, sublicense, or sell the software. No open-source licence has been selected. See [COPYRIGHT.md](COPYRIGHT.md).
+No open-source licence has been selected. The copyright notice does not itself grant permission to copy, modify, distribute, sublicense, or sell this software. See [COPYRIGHT.md](COPYRIGHT.md) before reusing the project.
 
-## Project reference
+## Project report
 
-The implementation is based on the supplied **AICL — AI-First Compact Language, Project Report, Version 1.0 (22 November 2026)**. The report's central two-layer architecture and research-first recommendation are preserved. The PDF report is included under `docs/AICL_Project_Report.pdf`.
+The original AICL project report was intentionally **not included** in this repository upload, as requested. This README and the source documentation describe the implementation and its current boundaries.
