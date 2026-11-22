@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicl.invalid/spec/aicl-ir-0.1.schema.json",
+  "title": "AICL-IR 0.1 prototype schema",
+  "description": "Draft JSON schema matching the repository's initial typed IR representation. Not a stable public wire format.",
+  "type": "object",
+  "required": ["schema", "module_version", "constants", "functions"],
+  "properties": {
+    "schema": { "const": "aicl-ir/0.1" },
+    "module_version": { "const": "0.1" },
+    "constants": { "type": "array", "items": { "$ref": "#/$defs/constant" } },
+    "functions": { "type": "array", "items": { "$ref": "#/$defs/function" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "typeName": {
+      "type": "string",
+      "pattern": "^(i64|f64|bool|Str|List\\[.+\\]|Fn\\[.+\\])$"
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "op", "type"],
+      "properties": {
+        "id": { "type": "string", "minLength": 3 },
+        "op": { "enum": ["literal", "name", "unary", "binary", "call", "pipe"] },
+        "value": {},
+        "type": { "$ref": "#/$defs/typeName" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/node" } }
+      },
+      "additionalProperties": false
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "type", "id"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "$ref": "#/$defs/typeName" },
+        "id": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "function": {
+      "type": "object",
+      "required": ["name", "parameters", "return_type", "effect", "body"],
+      "properties": {
+        "name": { "type": "string" },
+        "parameters": { "type": "array", "items": { "$ref": "#/$defs/parameter" } },
+        "return_type": { "$ref": "#/$defs/typeName" },
+        "effect": { "const": "pure" },
+        "body": { "$ref": "#/$defs/node" }
+      },
+      "additionalProperties": false
+    },
+    "constant": {
+      "type": "object",
+      "required": ["name", "type", "initializer"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "$ref": "#/$defs/typeName" },
+        "initializer": { "$ref": "#/$defs/node" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
