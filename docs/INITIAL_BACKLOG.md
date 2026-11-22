@@ -1,20 +1,24 @@
 # Initial engineering backlog
 
-These items translate the report's first-month plan into issues that can be tackled independently.
+These items translate the report's first-month plan and the AICL 0.2 patch experiment into verifiable tasks.
 
 ## Research spike
 
 - [ ] Define 30–50 benchmark tasks spanning pure functions, data pipelines, incremental maintenance, and repair.
 - [ ] Add equivalent Python and TypeScript baselines with acceptance tests.
 - [ ] Pin target models, tokenizers, decoding settings, prompt templates, and retry limits.
-- [ ] Prototype at least two alternate compact grammars and compare token counts and parse reliability.
+- [ ] Prototype alternate compact source grammars and compare tokenizer counts and parse reliability.
+- [ ] Measure total agent workflow tokens, including context retrieval, patching, testing, retries, and failures.
 
 ## Language and IR
 
+- [x] Prototype canonical IR node paths usable for node-addressed edits.
+- [x] Add a compact, hash-guarded AICL Patch Text 0.2 profile.
+- [x] Reject overlapping node edits and type-check the entire candidate transaction.
 - [ ] Publish complete EBNF, precedence, evaluation order, overflow, error, and numeric semantics.
-- [ ] Add source maps and stable declaration IDs.
+- [ ] Add source maps and durable declaration identity semantics.
 - [ ] Specify canonical IR schema/version compatibility and a deterministic binary encoding.
-- [ ] Add transactional `add_node`, `remove_declaration`, and `rename_symbol` patch operations.
+- [ ] Add transactional add/remove/rename and structured patch-conflict operations.
 
 ## Compiler and runtime
 
@@ -27,4 +31,4 @@ These items translate the report's first-month plan into issues that can be tack
 
 - [ ] Add compact context retrieval and machine-readable diagnostics with stable node IDs.
 - [ ] Build create → parse → verify → run → test → patch → rerun workflow tests.
-- [ ] Measure full workflow tokens, including inspection, repair, tests, and failed attempts.
+- [ ] Compare compact patches against ordinary code diffs on a representative task corpus.
