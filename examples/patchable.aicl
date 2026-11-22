@@ -1,0 +1,2 @@
+aicl 0.1
+f scale(x:i64)->i64 !pure = x * 2
