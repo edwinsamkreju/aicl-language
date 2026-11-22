@@ -1,0 +1,26 @@
+(* AICL Patch Text 0.2 — experimental compact patch profile.
+
+A patch applies only to the exact canonical module hash it names. The parser
+converts this text to the validated patch operation structure. Patches are
+transactional: all operations apply and the resulting module type-checks, or
+the source remains unchanged.
+
+This profile currently supports replace_node and replace_body only.
+*)
+patch           = header, newline, base-line, newline, operation, { newline, operation }, [ newline ] ;
+header          = "aicl-patch", whitespace, "0.2" ;
+base-line       = "base", whitespace, "sha256:", 64 * hex-digit ;
+operation      = node-operation | body-operation ;
+node-operation  = "node", whitespace, identifier, whitespace, node-id, whitespace, "=", expression ;
+body-operation  = "body", whitespace, identifier, whitespace, "=", expression ;
+node-id         = "n:", identifier, ":", path ;
+path            = path-segment, { "/", path-segment } ;
+path-segment    = identifier | "arg", digit ;
+identifier      = letter, { letter | digit | "_" } ;
+hex-digit       = digit | "a"…"f" | "A"…"F" ;
+
+(* Examples:
+   aicl-patch 0.2
+   base sha256:<64 hexadecimal digits>
+   node scale n:scale:body/right = 3
+*)
