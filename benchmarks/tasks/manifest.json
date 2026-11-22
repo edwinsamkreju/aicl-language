@@ -2,7 +2,7 @@
   {
     "id": "clamp",
     "description": "Clamp an integer into an inclusive lower/upper range",
-    "baseline": "tasks/clamp.py",
-    "candidate": "../../examples/clamp.aicl"
+    "baseline": "benchmarks/tasks/clamp.py",
+    "candidate": "examples/clamp.aicl"
   }
 ]
