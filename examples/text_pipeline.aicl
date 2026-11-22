@@ -1,0 +1,3 @@
+aicl 0.1
+# Pipeline calls inject the left-hand value as the first argument.
+f clean(xs:List[Str])->List[Str] !pure = xs |> map(trim) |> filter(not_empty) |> unique
