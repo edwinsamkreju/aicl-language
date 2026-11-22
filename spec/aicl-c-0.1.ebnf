@@ -1,0 +1,29 @@
+(* AICL-C 0.1 prototype grammar. The implementation is line-oriented. *)
+
+module          = version-line, newline, { blank-line | comment-line | declaration-line } ;
+version-line    = "aicl", whitespace, "0.1" ;
+declaration-line = constant | function ;
+constant        = "c", whitespace, identifier, ":", type, "=", expression ;
+function        = "f", whitespace, identifier, "(", [ parameters ], ")", "->", type,
+                  [ whitespace, "!pure" ], "=", expression ;
+parameters      = parameter, { ",", parameter } ;
+parameter       = identifier, ":", type ;
+type            = scalar-type | "List", "[", type, "]" ;
+scalar-type     = "i64" | "f64" | "bool" | "Str" ;
+
+expression      = logical-or ;
+logical-or      = logical-and, { "||", logical-and } ;
+logical-and     = comparison, { "&&", comparison } ;
+comparison      = pipeline, [ ("==" | "!=" | "<" | "<=" | ">" | ">="), pipeline ] ;
+pipeline        = additive, { "|>", additive } ;
+additive        = multiplicative, { ("+" | "-"), multiplicative } ;
+multiplicative  = unary, { ("*" | "/" | "%"), unary } ;
+unary           = [ "-" | "!" ], primary | primary ;
+primary         = literal | identifier, [ "(", [ arguments ], ")" ] | "(", expression, ")" ;
+arguments       = expression, { ",", expression } ;
+literal         = integer | float | string | "true" | "false" ;
+identifier      = letter, { letter | digit | "_" } ;
+
+(* Pipeline semantics: `value |> fn(a,b)` means `fn(value,a,b)`. *)
+(* The reference parser currently implements the operator precedence directly;
+   the formal grammar and parser conformance suite will be tightened together. *)
