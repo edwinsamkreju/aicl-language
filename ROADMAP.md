@@ -13,7 +13,7 @@ This roadmap adapts the project's report into small, verifiable increments. It i
 - [x] Add examples, tests, CI, and source-token / patch-payload microbenchmarks.
 - [x] Define a deterministic 100-task paired Python/AICL corpus with 500 matched input cases.
 - [x] Add correctness, source-size, tokenizer-payload and runtime-diagnostic harnesses; upload CI JSON reports.
-- [ ] Run and review the hosted benchmark artifacts; investigate any mismatches before quoting results.
+- [x] Run and review hosted benchmark artifacts on Python 3.11 and 3.12; both report 500/500 matched cases.
 - [ ] Measure compact node patches and complete agent workflows with actual target models and model-specific tokenizers.
 - [ ] Expand beyond the prototype subset before making general-purpose language comparisons.
 
