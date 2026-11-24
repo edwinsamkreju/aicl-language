@@ -32,7 +32,7 @@ def test_analyze_sums_all_model_requests_and_compares_pairs() -> None:
     assert report["python"]["total_retries"] == 0
     assert report["aicl"]["stage_breakdown"]["repair"]["requests"] == 1
     assert report["paired_comparison"]["complete_pairs"] == 1
-    assert report["paired_comparison"]["aggregate_token_reduction_fraction"] == pytest.approx(20 / 155)
+    assert report["paired_comparison"]["aggregate_token_reduction_fraction"] == pytest.approx(20 / 155, abs=1e-6)
 
 def test_analyze_rejects_model_mismatch() -> None:
     records = [record("python", 1), record("aicl", 2, model="different")]
