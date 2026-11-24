@@ -11,8 +11,11 @@ This roadmap adapts the project's report into small, verifiable increments. It i
 - [x] Implement bounded reference interpreter and hash-guarded whole-body patches.
 - [x] Add stable-node patch operations and compact AICL Patch Text 0.2.
 - [x] Add examples, tests, CI, and source-token / patch-payload microbenchmarks.
-- [ ] Build a 30–50 task benchmark corpus and collect equivalent Python/TypeScript baselines.
-- [ ] Measure compact node patches with the actual target model tokenizers and agent workflows.
+- [x] Define a deterministic 100-task paired Python/AICL corpus with 500 matched input cases.
+- [x] Add correctness, source-size, tokenizer-payload and runtime-diagnostic harnesses; upload CI JSON reports.
+- [ ] Run and review the hosted benchmark artifacts; investigate any mismatches before quoting results.
+- [ ] Measure compact node patches and complete agent workflows with actual target models and model-specific tokenizers.
+- [ ] Expand beyond the prototype subset before making general-purpose language comparisons.
 
 ## Milestone 1 — language core
 
