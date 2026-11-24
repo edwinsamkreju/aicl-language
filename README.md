@@ -90,7 +90,7 @@ Character count is not token count. This single-patch microbenchmark does not me
 
 ## Major milestone: 100 equivalent Python/AICL tasks
 
-The next milestone is now implemented as a reproducible benchmark suite: **100 paired pure-function tasks and 500 identical test cases** across ten supported task families.
+The milestone is implemented as a reproducible benchmark suite: **100 paired pure-function tasks and 500 identical test cases** across ten supported task families.
 
 ~~~
 python -m pip install -e '.[test,bench]'
@@ -101,7 +101,23 @@ python benchmarks/run_equivalent_tasks.py --suite /tmp/paired_suite.json --encod
 
 The runner checks Python/AICL output type and value parity, records interpreter setup and local runtime diagnostics, and counts both source tokens and a shared task-description prompt corpus when tiktoken is installed. GitHub Actions runs it on Python 3.11 and 3.12 and uploads the JSON results as build artifacts.
 
-**Measurement boundary:** these are tokenizer counts for fixed task prompts and checked-in source, not observed model-generated completions or complete AI-agent workflows. No model is called, so edit/debug/retry/tool traffic and end-to-end model token usage remain unmeasured. Runtime compares CPython functions with a Python-hosted AICL reference interpreter; it is not a native compiler comparison. See [the benchmark protocol](docs/EQUIVALENT_TASK_BENCHMARK.md) before interpreting results.
+### First hosted result — 24 November 2026
+
+Both CI jobs passed: 500 paired cases each, **zero mismatches**. Using tiktoken's cl100k_base encoding, this fixed source corpus measured:
+
+| Measurement | Python | AICL | AICL reduction |
+|---|---:|---:|---:|
+| Source characters | 5,667 | 4,387 | 22.59% |
+| Source tokens | 1,888 | 1,777 | 5.88% |
+| Shared task prompt + source tokens | 5,384 | 5,273 | 2.06% |
+
+The shared task-description prompt corpus accounts for 3,496 tokens on both sides. The source-token difference is 111 tokens; once the identical prompt is included, the measured payload difference is 111 of 5,384 tokens. The result is therefore a modest source-serialization advantage on this deliberately narrow suite, not evidence of major overall AI savings.
+
+The runtime diagnostic ran 10,000 calls per language. On Python 3.11, the observed averages were 0.111 microseconds per CPython call and 1.295 microseconds per AICL reference-interpreter call. On Python 3.12, they were 0.147 and 2.673 microseconds respectively. The prototype interpreter is slower in this test; these figures compare a Python-hosted AST interpreter with CPython function calls and are not a native compiler comparison.
+
+See [the full benchmark protocol and run record](docs/EQUIVALENT_TASK_BENCHMARK.md) and [GitHub Actions run 49](https://github.com/edwinsamkreju/aicl-language/actions/runs/45312741478), which contains downloadable JSON artifacts for both Python versions.
+
+**Measurement boundary:** these are tokenizer counts for fixed task prompts and checked-in source, not observed model-generated completions or complete AI-agent workflows. No model is called, so edit/debug/retry/tool traffic and end-to-end model token usage remain unmeasured. Runtime compares CPython functions with a Python-hosted AICL reference interpreter; it is not a native compiler comparison. The benchmark covers only functions expressible in the current AICL 0.1 subset and uses five test cases per task. See [the benchmark protocol](docs/EQUIVALENT_TASK_BENCHMARK.md) before interpreting results.
 
 ## Repository structure
 
