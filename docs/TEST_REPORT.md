@@ -12,7 +12,7 @@ Recorded 24 November 2026. The earlier 22 November prototype measurements are re
 GitHub Actions run 49: [view run and artifacts](https://github.com/edwinsamkreju/aicl-language/actions/runs/45312741478).
 
 - CI environments: Python 3.11.18 and 3.12.16.
-- Existing automated pytest suite: 17 tests passed in each matrix job.
+- Existing automated pytest suite at that commit: 17 tests passed in each matrix job.
 - Paired benchmark: 100 tasks, 10 task families, 500 matched input cases per environment.
 - Correctness: **500/500 matched in each environment; zero mismatches**.
 - Tokenizer: tiktoken cl100k_base.
@@ -33,8 +33,21 @@ Ten thousand function calls per language were timed after AICL parse/type-check 
 
 The AICL interpreter is slower in this test. This compares a Python-hosted AST interpreter with direct CPython function calls; it is not a benchmark of a compiled AICL runtime.
 
+## Live-agent experiment framework
+
+GitHub Actions run 69: [CI passed on Python 3.11 and 3.12](https://github.com/edwinsamkreju/aicl-language/actions/runs/45314779768).
+
+- Automated tests: **24 passed** on each Python version.
+- Added a strict JSONL trace schema for provider-reported request usage.
+- Added a paired trace analyzer with per-language totals, success rates, per-stage token breakdown, tool/retry counts, optional cost estimates, aggregate and per-task paired comparisons.
+- The analyzer requires one Python and one AICL record per task/trial, matching model snapshot, tokenizer and shared experiment-configuration SHA-256; it rejects duplicate or inconsistent records.
+- Defined a deterministic 10-task, two-trial pilot: 40 total task-language runs.
+
+**No live model calls have been performed.** This session does not provide an executable model-inference connection that exposes all request-level usage receipts. The trace framework and protocol are ready, but completion tokens, actual retries, and end-to-end live-agent savings are still unmeasured.
+
 ## Limits and next step
 
-This suite tests only the currently implemented AICL-C 0.1 pure-function subset, using five fixed test cases per task. The 5.88% source-token reduction and 2.06% prompt-plus-source reduction are corpus-specific. No model was called, so actual completion tokens, tool traffic, patch/edit tokens, debug/retry tokens, completion rate, and end-to-end agent workflow cost remain unmeasured.
+The 100-task suite tests only the currently implemented AICL-C 0.1 pure-function subset, using five fixed test cases per task. The 5.88% source-token reduction and 2.06% prompt-plus-source reduction are corpus-specific. No model was called in that benchmark, so actual completion tokens, tool traffic, patch/edit tokens, debug/retry tokens, completion rate, and end-to-end agent workflow cost remain unmeasured.
 
-The next research step is a live-agent A/B test using the same model version, tokenizer, task prompts, tool budget, tests, repair policy, and randomized ordering, with complete per-task traces and multiple trials.
+The next step is to run the 10-task/two-trial live-agent pilot using the same exact model snapshot, tokenizer, shared experiment configuration, task descriptions, test oracle, tools and repair limits for both languages. Preserve provider-reported usage events for every request and analyze them with benchmarks/analyze_agent_traces.py before scaling up.
+
