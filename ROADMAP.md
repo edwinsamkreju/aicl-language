@@ -14,6 +14,8 @@ This roadmap adapts the project's report into small, verifiable increments. It i
 - [x] Define a deterministic 100-task paired Python/AICL corpus with 500 matched input cases.
 - [x] Add correctness, source-size, tokenizer-payload and runtime-diagnostic harnesses; upload CI JSON reports.
 - [x] Run and review hosted benchmark artifacts on Python 3.11 and 3.12; both report 500/500 matched cases.
+- [x] Define a paired live-agent A/B protocol, request-level trace schema, deterministic 10-task/two-trial pilot, and trace analyzer.
+- [ ] Execute the live-agent pilot with one pinned model snapshot and provider-reported request usage; review quality and budget before scaling.
 - [ ] Measure compact node patches and complete agent workflows with actual target models and model-specific tokenizers.
 - [ ] Expand beyond the prototype subset before making general-purpose language comparisons.
 
