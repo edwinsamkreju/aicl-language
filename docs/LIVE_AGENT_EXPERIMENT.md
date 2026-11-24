@@ -16,7 +16,13 @@ This repository work can prepare the task protocol and analyze provider usage re
 
 Begin with a **10-task pilot and two paired trials** (40 total task-language runs). Review trace quality, task difficulty, completion rates, and estimated spend before scaling to all 100 tasks. Do not begin the 100-task, five-trial expansion until a budget cap and maximum repair count are explicitly set.
 
-Use the same exact model snapshot and tokenizer for both languages. Pin the system instructions, temperature/sampling settings, maximum context, tool definitions, permissions, filesystem layout, test oracle, wall-clock limit, and retry/repair limit. Randomize and balance language order within each task/trial; record pair_order as 1 or 2. Do not run one language with additional hidden context or privileged tools.
+Use the same exact model snapshot and tokenizer for both languages. Create a local JSON file containing the shared sampling, prompt-framework, tool, permission, context, and stop-limit configuration. Compute its fingerprint with Python: 
+
+~~~
+python -c "import hashlib,pathlib; print('sha256:'+hashlib.sha256(pathlib.Path('experiment-config.json').read_bytes()).hexdigest())"
+~~~
+
+Put that identical SHA-256 value in every trace row as experiment_config_hash. Do not include language-specific source examples in the shared configuration file; those are the sole intended language-condition differences. If shared settings change, create a new configuration file and do not pool those runs. Pin the system instructions, temperature/sampling settings, maximum context, tool definitions, permissions, filesystem layout, test oracle, wall-clock limit, and retry/repair limit. Randomize and balance language order within each task/trial; record pair_order as 1 or 2. Do not run one language with additional hidden context or privileged tools.
 
 ### 2. Equivalent task workspace
 
