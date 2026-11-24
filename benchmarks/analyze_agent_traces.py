@@ -20,7 +20,7 @@ def _validate_record(record: Any, line_number: int) -> dict[str, Any]:
     if not isinstance(record, dict):
         raise ValueError(prefix + "each JSONL record must be an object")
     required = {"schema_version", "benchmark", "task_id", "trial_id", "language",
-        "pair_order", "model_id", "model_snapshot", "tokenizer_id", "success",
+        "pair_order", "model_id", "model_snapshot", "tokenizer_id", "experiment_config_hash", "success",
         "tests_passed", "test_count", "retry_count", "wall_time_ms", "requests"}
     missing = sorted(required - record.keys())
     if missing:
@@ -29,7 +29,7 @@ def _validate_record(record: Any, line_number: int) -> dict[str, Any]:
         raise ValueError(prefix + f"unsupported schema_version: {record['schema_version']!r}")
     if record["benchmark"] != BENCHMARK:
         raise ValueError(prefix + f"benchmark must be {BENCHMARK!r}")
-    for field in ("task_id", "trial_id", "model_id", "model_snapshot", "tokenizer_id"):
+    for field in ("task_id", "trial_id", "model_id", "model_snapshot", "tokenizer_id", "experiment_config_hash"):
         if not isinstance(record[field], str) or not record[field].strip():
             raise ValueError(prefix + f"{field} must be a non-empty string")
     if record["language"] not in LANGUAGES:
@@ -136,9 +136,9 @@ def analyze(records: list[dict[str, Any]], input_rate: float | None = None,
     for rate in (input_rate, output_rate):
         if rate is not None and (not math.isfinite(rate) or rate < 0):
             raise ValueError("token rates must be finite non-negative USD per million tokens")
-    identities = {(r["model_id"], r["model_snapshot"], r["tokenizer_id"]) for r in records}
+    identities = {(r["model_id"], r["model_snapshot"], r["tokenizer_id"], r["experiment_config_hash"]) for r in records}
     if len(identities) != 1:
-        raise ValueError("all traces must use the same model_id, model_snapshot, and tokenizer_id")
+        raise ValueError("all traces must use the same model_id, model_snapshot, tokenizer_id, and experiment_config_hash")
     pairs: dict[tuple[str, str], dict[str, dict[str, Any]]] = defaultdict(dict)
     seen = set()
     for record in records:
@@ -175,10 +175,32 @@ def analyze(records: list[dict[str, Any]], input_rate: float | None = None,
         "aggregate_token_reduction_fraction": round((py["total_tokens"] - aicl["total_tokens"]) / py["total_tokens"], 6) if py["total_tokens"] else None,
         "mean_pairwise_token_reduction_fraction": round(statistics.mean(reductions), 6) if reductions else None,
         "mean_pairwise_token_reduction_when_both_succeed": round(statistics.mean(both_success_reductions), 6) if both_success_reductions else None}
+    per_pair = []
+    for (task_id, trial_id), pair in sorted(pairs.items()):
+        p, a = pair["python"], pair["aicl"]
+        pt, at = _run_totals(p), _run_totals(a)
+        per_pair.append({
+            "task_id": task_id, "trial_id": trial_id,
+            "first_language": "python" if p["pair_order"] == 1 else "aicl",
+            "python": {"success": p["success"], "tests_passed": p["tests_passed"],
+                "test_count": p["test_count"], "input_tokens": pt["input_tokens"],
+                "output_tokens": pt["output_tokens"], "total_tokens": pt["total_tokens"],
+                "retry_count": p["retry_count"], "tool_calls": pt["tool_calls"],
+                "wall_time_ms": p["wall_time_ms"]},
+            "aicl": {"success": a["success"], "tests_passed": a["tests_passed"],
+                "test_count": a["test_count"], "input_tokens": at["input_tokens"],
+                "output_tokens": at["output_tokens"], "total_tokens": at["total_tokens"],
+                "retry_count": a["retry_count"], "tool_calls": at["tool_calls"],
+                "wall_time_ms": a["wall_time_ms"]},
+            "aicl_token_delta": pt["total_tokens"] - at["total_tokens"],
+            "aicl_token_reduction_fraction": (
+                round((pt["total_tokens"] - at["total_tokens"]) / pt["total_tokens"], 6)
+                if pt["total_tokens"] else None)})
+    identity = next(iter(identities))
     return {"schema_version": "aicl-agent-benchmark-report/1.0", "benchmark": BENCHMARK,
-        "model": {"model_id": next(iter(identities))[0], "model_snapshot": next(iter(identities))[1],
-                  "tokenizer_id": next(iter(identities))[2]},
-        "python": py, "aicl": aicl, "paired_comparison": paired,
+        "model": {"model_id": identity[0], "model_snapshot": identity[1],
+                  "tokenizer_id": identity[2], "experiment_config_hash": identity[3]},
+        "python": py, "aicl": aicl, "paired_comparison": paired, "per_pair_results": per_pair,
         "notes": [
             "Token usage is summed from provider-reported usage for every model request in each complete run, including repair and retry requests.",
             "A paired reduction is positive when AICL used fewer tokens than Python.",
