@@ -5,7 +5,7 @@ Use this checklist unchanged for both language conditions. Store one trace recor
 ## Before a paired trial
 
 - [ ] Pin the exact model snapshot and tokenizer identifier.
-- [ ] Pin sampling parameters, context limit, tool definitions and permissions.
+- [ ] Pin sampling parameters, context limit, tool definitions and permissions; hash this shared configuration as SHA-256.
 - [ ] Use the same task description, expected signature, logical tests, workspace scaffold and stop limits.
 - [ ] Select a task/trial pair and randomized language order; log pair_order 1 for the first run and 2 for the second.
 - [ ] Start from clean, independent workspaces so one language run cannot leak its solution to the other.
@@ -21,7 +21,7 @@ Use this checklist unchanged for both language conditions. Store one trace recor
 
 ## After each run
 
-- [ ] Write a JSONL row conforming to trace.schema.json.
+- [ ] Write a JSONL row conforming to trace.schema.json, including the shared experiment_config_hash in sha256:<64 lowercase hex> form.
 - [ ] Keep the original provider usage receipt privately for auditing.
 - [ ] Do not put credentials, private prompt transcripts, or user data into Git.
 - [ ] Ensure the Python and AICL record share task ID and trial ID and use the exact same model snapshot and tokenizer.
