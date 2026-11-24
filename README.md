@@ -119,6 +119,16 @@ See [the full benchmark protocol and run record](docs/EQUIVALENT_TASK_BENCHMARK.
 
 **Measurement boundary:** these are tokenizer counts for fixed task prompts and checked-in source, not observed model-generated completions or complete AI-agent workflows. No model is called, so edit/debug/retry/tool traffic and end-to-end model token usage remain unmeasured. Runtime compares CPython functions with a Python-hosted AICL reference interpreter; it is not a native compiler comparison. The benchmark covers only functions expressible in the current AICL 0.1 subset and uses five test cases per task. See [the benchmark protocol](docs/EQUIVALENT_TASK_BENCHMARK.md) before interpreting results.
 
+## Live-agent experiment framework
+
+The next experiment has a separate protocol and trace-analysis tool. It is designed to compare complete, paired agent runs using actual provider-reported usage for every create, inspect, patch, test, and repair request. Start with the predefined [10-task, two-trial pilot](benchmarks/live_agent/pilot_task_ids.json), and follow the [live-agent experiment protocol](docs/LIVE_AGENT_EXPERIMENT.md) and [run checklist](benchmarks/live_agent/AGENT_RUN_PROTOCOL.md). Import normalized request traces with:
+
+~~~
+python benchmarks/analyze_agent_traces.py --input pilot-traces.jsonl --output pilot-report.json
+~~~
+
+This framework does not itself invoke a model. No live agent comparison has been performed; the report requires real provider usage receipts and rejects unpaired or mixed-model data. See the [trace schema](benchmarks/live_agent/trace.schema.json).
+
 ## Repository structure
 
 ~~~
