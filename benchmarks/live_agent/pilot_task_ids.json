@@ -1,0 +1,18 @@
+{
+  "suite": "AICL-PY-100",
+  "pilot_version": "1.0",
+  "task_ids": [
+    "add_01",
+    "subtract_01",
+    "multiply_01",
+    "minimum_01",
+    "maximum_01",
+    "absolute_delta_01",
+    "greater_than_01",
+    "append_suffix_01",
+    "trim_string_01",
+    "unique_list_01"
+  ],
+  "paired_trials": 2,
+  "planned_task_language_runs": 40
+}
