@@ -43,7 +43,7 @@ Use an agreed maximum repair/retry count and wall-clock limit fixed before the f
 
 ### 5. Data capture and privacy
 
-Write one JSONL record per task/language/trial, using the trace schema at ../benchmarks/live_agent/trace.schema.json. Each record must include the model ID and immutable model snapshot, tokenizer identifier, order, success/test counts, retry count, elapsed time, and one event for every model request. Each request event includes stage, provider-reported input/output tokens, tool-call count, and request latency when available.
+Write one JSONL record per task/language/trial, using the trace schema at ../benchmarks/live_agent/trace.schema.json. Each record must include the model ID and immutable model snapshot, tokenizer identifier, shared experiment-config SHA-256, order, success/test counts, retry count, elapsed time, and one event for every model request. Each request event includes stage, provider-reported input/output tokens, tool-call count, and request latency when available.
 
 Store only the minimum metadata needed for analysis. Do not commit API keys, access tokens, personal data, private prompts, or full workspace contents to this repository. Keep raw provider receipts private; preserve a local audit trail connecting each usage figure to its source receipt. Redact sensitive content before retaining any trace transcript.
 
@@ -61,7 +61,7 @@ Optional cost estimates require both rates, supplied explicitly in USD per milli
 python benchmarks/analyze_agent_traces.py --input pilot-traces.jsonl --input-rate-per-million INPUT_RATE --output-rate-per-million OUTPUT_RATE
 ~~~
 
-The analyzer rejects mixed model snapshots/tokenizers, duplicate rows, incomplete pairs, inconsistent test success, and invalid token counts. It reports success rate, total and mean input/output tokens, request/tool/retry counts, latency, stage breakdown, paired token reduction, and optional cost. Failed runs remain included in usage totals.
+The analyzer rejects mixed model snapshots/tokenizers/configuration hashes, duplicate rows, incomplete pairs, inconsistent test success, and invalid token counts. It also emits per-task paired results with language order. It reports success rate, total and mean input/output tokens, request/tool/retry counts, latency, stage breakdown, paired token reduction, and optional cost. Failed runs remain included in usage totals.
 
 ## Release-quality reporting
 
