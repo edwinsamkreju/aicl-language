@@ -1,6 +1,6 @@
 # Live-agent A/B experiment: AICL versus Python
 
-**Status:** experiment protocol and trace analyzer implemented. No live model calls have been run by this repository change.
+**Status:** experiment protocol, trace schema, trace analyzer, and deterministic 10-task/two-trial pilot set implemented. No live model calls have been run by this repository change.
 
 ## Objective
 
