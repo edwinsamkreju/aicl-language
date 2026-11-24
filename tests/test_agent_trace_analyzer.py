@@ -17,7 +17,7 @@ def record(language: str, order: int, *, model: str = "model-x",
         "schema_version": "aicl-agent-trace/1.0", "benchmark": "AICL-PY-100",
         "task_id": "add_01", "trial_id": "pilot-01", "language": language,
         "pair_order": order, "model_id": model, "model_snapshot": "model-x-2026-01-01",
-        "tokenizer_id": "tokenizer-x", "success": success,
+        "tokenizer_id": "tokenizer-x", "experiment_config_hash": "sha256:" + "a" * 64, "success": success,
         "tests_passed": 5 if success else 4, "test_count": 5,
         "retry_count": 1 if not success else 0, "wall_time_ms": 200,
         "requests": [
@@ -38,6 +38,18 @@ def test_analyze_rejects_model_mismatch() -> None:
     records = [record("python", 1), record("aicl", 2, model="different")]
     with pytest.raises(ValueError, match="same model_id"):
         module.analyze(records)
+
+def test_analyze_rejects_experiment_configuration_mismatch() -> None:
+    py = record("python", 1)
+    aicl = record("aicl", 2)
+    aicl["experiment_config_hash"] = "sha256:" + "b" * 64
+    with pytest.raises(ValueError, match="experiment_config_hash"):
+        module.analyze([py, aicl])
+
+def test_analyze_reports_per_task_pair_results() -> None:
+    report = module.analyze([record("python", 1), record("aicl", 2)])
+    assert report["per_pair_results"][0]["task_id"] == "add_01"
+    assert report["per_pair_results"][0]["first_language"] == "python"
 
 def test_analyze_rejects_incomplete_pairs() -> None:
     with pytest.raises(ValueError, match="one Python and one AICL"):
