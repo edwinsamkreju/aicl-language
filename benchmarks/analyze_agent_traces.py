@@ -130,6 +130,7 @@ def _language_summary(records: list[dict[str, Any]], language: str,
 
 def analyze(records: list[dict[str, Any]], input_rate: float | None = None,
             output_rate: float | None = None) -> dict[str, Any]:
+    records = [_validate_record(record, index) for index, record in enumerate(records, start=1)]
     if (input_rate is None) != (output_rate is None):
         raise ValueError("provide both input and output token rates, or neither")
     for rate in (input_rate, output_rate):
