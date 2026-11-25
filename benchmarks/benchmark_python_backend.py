@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Callable
 
 from aicl.backend.python import compile_program
-from aicl.semantics import Interpreter, run_function
+from aicl.semantics import ExecutionBudget, Interpreter, run_function
 from aicl.syntax import parse_module
 
 
@@ -69,7 +69,10 @@ def main() -> int:
     compile_samples = _timed_samples(lambda: compile_program(program), args.repeats)
     compiled = compile_program(program)
     interpreter_setup_samples = _timed_samples(lambda: Interpreter(program), args.repeats)
-    interpreter = Interpreter(program)
+    interpreter = Interpreter(
+        program,
+        budget=ExecutionBudget(max_steps=(args.iterations * args.repeats + 1_000) * 100),
+    )
 
     expected = run_function(program, args.function, call_args)
     compiled_result = compiled.run_function(args.function, call_args)
