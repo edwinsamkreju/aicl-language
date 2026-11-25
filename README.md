@@ -16,7 +16,7 @@ Requires Python 3.11 or later.
 
 ~~~bash
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 python -m pip install -e .
 python -m pip install pytest
 pytest
@@ -38,25 +38,25 @@ The agent interface is the preferred automation surface. It uses one JSON reques
 Inspect the module signature index without sending function bodies:
 
 ~~~bash
-printf '%s\\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"module"}' | aicl agent examples/clamp.aicl
+printf '%s\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"module"}' | aicl agent examples/clamp.aicl
 ~~~
 
 Request only one function's typed IR tree:
 
 ~~~bash
-printf '%s\\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"function","name":"clamp"}' | aicl agent examples/clamp.aicl
+printf '%s\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"function","name":"clamp"}' | aicl agent examples/clamp.aicl
 ~~~
 
 Request only one expression subtree:
 
 ~~~bash
-printf '%s\\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"node","id":"n:clamp:body/right"}' | aicl agent examples/clamp.aicl
+printf '%s\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"node","id":"n:clamp:body/right"}' | aicl agent examples/clamp.aicl
 ~~~
 
 Run a structured verification request:
 
 ~~~bash
-printf '%s\\n' '{"protocol":"aicl-agent/0.1","op":"check"}' | aicl agent examples/clamp.aicl
+printf '%s\n' '{"protocol":"aicl-agent/0.1","op":"check"}' | aicl agent examples/clamp.aicl
 ~~~
 
 Apply a patch through the same interface. The patch is checked against the exact canonical module hash and the candidate module is type-checked before an atomic file replacement:
@@ -69,7 +69,7 @@ from aicl.syntax import parse_module
 from pathlib import Path
 path = Path("examples/patchable.aicl")
 base = module_hash(parse_module(path.read_text(encoding="utf-8")))
-patch = f"aicl-patch 0.2\\nbase {base}\\nnode scale n:scale:body/right = 3\\n"
+patch = f"aicl-patch 0.2\nbase {base}\nnode scale n:scale:body/right = 3\n"
 print(json.dumps({"protocol": "aicl-agent/0.1", "op": "patch", "patch": patch}))
 PY
 ~~~
