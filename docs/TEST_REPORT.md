@@ -98,3 +98,18 @@ Single-function diagnostic using `examples/clamp.aicl`, 100,000 warmed calls per
 | Warmed generated CPython function, raw | 0.334 μs | 0.378 μs |
 
 The checked CPython path had about 2.1×–2.5× lower median latency than the warmed reference interpreter for this one small function. Its additional compile cost over reference-interpreter setup is recovered after approximately 59–60 repeated calls in this fixture. This is a microbenchmark, not a representative application or whole-language result. It does not establish an overall AICL-versus-Python speedup or lower live-agent workflow cost. More representative multi-function, list, package, and mixed Python/AICL workloads are required.
+
+
+## Python binding manifest/runtime 0.2
+
+GitHub Actions PR run 96: [both Python matrix jobs passed](https://github.com/edwinsamkreju/aicl-language/actions/runs/45652244725).
+
+- Python 3.11: **66 tests passed**.
+- Python 3.12: **66 tests passed**.
+- Added explicit reviewed signatures for selected APIs without complete annotations, including native-extension callables with inspectable or manually declared signatures.
+- Binding manifests include package/distribution metadata, Python implementation/version, type-source and signature-verification status, and a deterministic hash.
+- In-process calls require exact per-function capability grants, validate positional/keyword arguments and results, copy supported lists by value, enforce per-list/aggregate/depth limits, and reject awaitable results.
+- CI passed the 100-task paired corpus, CPython backend microbenchmark, CLI smoke tests, and benchmark artifact uploads in both environments.
+- Added an example binding for the standard-library `math.sqrt`; no third-party package installation is required.
+
+This is an in-process bridge for trusted Python applications, not a sandbox. It does not expose host calls to AICL source yet and does not establish safe execution of untrusted packages or lower total AI-agent workflow cost.
