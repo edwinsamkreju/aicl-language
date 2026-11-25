@@ -45,6 +45,19 @@ GitHub Actions run 69: [CI passed on Python 3.11 and 3.12](https://github.com/ed
 
 **No live model calls have been performed.** This session does not provide an executable model-inference connection that exposes all request-level usage receipts. The trace framework and protocol are ready, but completion tokens, actual retries, and end-to-end live-agent savings are still unmeasured.
 
+## AI-first agent interface 0.1
+
+GitHub Actions run 73: [view run](https://github.com/edwinsamkreju/aicl-language/actions/runs/45641205723).
+
+- Python 3.11 and 3.12 CI jobs both passed.
+- Automated test suite: **33 passed** on each Python version.
+- Added a JSONL agent protocol with bounded module-signature, function-IR, and expression-node inspection.
+- Added structured check responses and machine-readable error codes.
+- Added compact patch requests reusing AICL Patch Text 0.2; candidate source is hash-guarded, type-checked, and atomically replaced.
+- Added protocol schema and design/roadmap documentation.
+
+The new interface reduces unnecessary context retrieval for supported edit tasks. It has not yet been benchmarked against a live model for total tokens, task success, or end-to-end latency. No live model calls were made.
+
 ## Limits and next step
 
 The 100-task suite tests only the currently implemented AICL-C 0.1 pure-function subset, using five fixed test cases per task. The 5.88% source-token reduction and 2.06% prompt-plus-source reduction are corpus-specific. No model was called in that benchmark, so actual completion tokens, tool traffic, patch/edit tokens, debug/retry tokens, completion rate, and end-to-end agent workflow cost remain unmeasured.
