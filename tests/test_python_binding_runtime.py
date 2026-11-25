@@ -25,6 +25,11 @@ def invalid_return(value: int) -> int:
     return str(value)
 
 
+def mutate(values: list[int]) -> list[int]:
+    values.append(9)
+    return values
+
+
 @pytest.fixture()
 def module(monkeypatch):
     result = ModuleType("aicl_runtime_fixture")
@@ -32,6 +37,7 @@ def module(monkeypatch):
     result.label = label
     result.posonly = posonly
     result.invalid_return = invalid_return
+    result.mutate = mutate
     monkeypatch.setitem(sys.modules, result.__name__, result)
     return result
 
@@ -93,3 +99,25 @@ def test_runtime_checks_host_return_type(module):
     )
     with pytest.raises(AICLError, match="does not match i64"):
         runtime.call("invalid_return", [4])
+
+def test_runtime_copies_mutable_lists_across_the_host_boundary(module):
+    manifest = build_manifest(module, ["mutate"])
+    runtime = PythonBindingRuntime.bind(
+        manifest,
+        grants={"python:aicl_runtime_fixture.mutate"},
+    )
+    values = [1, 2]
+    result = runtime.call("mutate", [values])
+    assert values == [1, 2]
+    assert result == [1, 2, 9]
+    assert result is not values
+
+
+def test_runtime_bounds_list_size_and_nesting(module):
+    manifest = build_manifest(module, ["mutate"])
+    runtime = PythonBindingRuntime.bind(
+        manifest,
+        grants={"python:aicl_runtime_fixture.mutate"},
+    )
+    with pytest.raises(AICLError, match="10,000-item list limit"):
+        runtime.call("mutate", [[0] * 10_001])

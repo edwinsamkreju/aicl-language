@@ -10,18 +10,35 @@ from ..errors import AICLError
 from .manifest import SCHEMA, load_manifest
 
 
-def _matches(value: Any, type_name: str) -> bool:
-    if type_name == "bool":
-        return isinstance(value, bool)
+_MAX_LIST_ITEMS = 10_000
+_MAX_VALUE_DEPTH = 32
+
+
+def _convert(value: Any, type_name: str, *, path: str, depth: int = 0) -> Any:
+    """Validate an AICL value and detach mutable lists from host-owned objects."""
+    if depth > _MAX_VALUE_DEPTH:
+        raise AICLError("E-PYBIND-038", f"{path} exceeds the {_MAX_VALUE_DEPTH}-level nesting limit")
+    if type_name == "bool" and isinstance(value, bool):
+        return value
     if type_name == "i64":
-        return isinstance(value, int) and not isinstance(value, bool) and -(2**63) <= value < 2**63
-    if type_name == "f64":
-        return isinstance(value, (int, float)) and not isinstance(value, bool)
-    if type_name == "Str":
-        return isinstance(value, str)
-    if type_name.startswith("List[") and type_name.endswith("]"):
-        return isinstance(value, list) and all(_matches(item, type_name[5:-1]) for item in value)
-    return False
+        if isinstance(value, int) and not isinstance(value, bool) and -(2**63) <= value < 2**63:
+            return value
+    elif type_name == "f64":
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return value
+    elif type_name == "Str":
+        if isinstance(value, str):
+            return value
+    elif type_name.startswith("List[") and type_name.endswith("]"):
+        if isinstance(value, list):
+            if len(value) > _MAX_LIST_ITEMS:
+                raise AICLError("E-PYBIND-037", f"{path} exceeds the {_MAX_LIST_ITEMS}-item list limit")
+            item_type = type_name[5:-1]
+            return [
+                _convert(item, item_type, path=f"{path}[{index}]", depth=depth + 1)
+                for index, item in enumerate(value)
+            ]
+    raise AICLError("E-PYBIND-034", f"{path} must match {type_name}")
 
 
 class PythonBindingRuntime:
@@ -134,8 +151,12 @@ class PythonBindingRuntime:
             key = parameter["name"]
             if parameter["required"] and key not in supplied:
                 raise AICLError("E-PYBIND-033", f"Missing required parameter {key!r}")
-            if key in supplied and not _matches(supplied[key], parameter["type"]):
-                raise AICLError("E-PYBIND-034", f"Argument {key!r} must match {parameter['type']}")
+            if key in supplied:
+                supplied[key] = _convert(
+                    supplied[key],
+                    parameter["type"],
+                    path=f"Argument {key!r}",
+                )
 
         call_args = []
         for parameter in parameters:
@@ -156,6 +177,8 @@ class PythonBindingRuntime:
         except Exception as exc:
             raise AICLError("E-PYBIND-035", f"Python host call failed: {type(exc).__name__}: {exc}") from exc
 
-        if not _matches(result, entry["return_type"]):
-            raise AICLError("E-PYBIND-036", f"Python result from {name!r} does not match {entry['return_type']}")
-        return result
+        return _convert(
+            result,
+            entry["return_type"],
+            path=f"Python result from {name!r}",
+        )
