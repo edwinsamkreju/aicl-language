@@ -62,6 +62,18 @@ The new interface reduces unnecessary context retrieval for supported edit tasks
 
 Added `spec/aicl-ir-0.1.schema.json`, `aicl ir --compact`, and `aicl ir --hash-only`. The compact output is parsed in tests and compared semantically with pretty output; the hash-only mode is checked against the canonical module hash. This is a transport/contract improvement, not a binary IR or a live-agent token benchmark.
 
+## Optional CPython AST backend 0.1
+
+GitHub Actions run 80: [both Python matrix jobs passed](https://github.com/edwinsamkreju/aicl-language/actions/runs/45648348511).
+
+- Python 3.11.18: **41 tests passed**.
+- Python 3.12.16: **41 tests passed**.
+- Added an optional typed-AICL-to-Python-AST compiler and `aicl run-python`; the default `aicl run` reference interpreter remains unchanged.
+- Differential tests compare the CPython backend with the reference interpreter across arithmetic, comparisons, constants, function calls, map/filter/unique pipelines, and type errors.
+- CI CLI smoke tests passed for both reference and CPython execution.
+- The existing 100-task corpus still reports 1,888 Python source tokens versus 1,777 AICL source tokens, and 5,384 versus 5,273 shared-prompt-plus-source tokens. These are exactly the existing corpus measurements; the backend adds no fields to AICL source, canonical IR, hashes, patch text, or Agent Protocol 0.1 messages.
+- This does not establish lower live-agent token usage or a runtime speedup. One-time lowering/compilation cost versus warmed CPython execution still needs a dedicated benchmark. The backend is not a hardened sandbox and has no reference-interpreter step/depth budget.
+
 ## Limits and next step
 
 The 100-task suite tests only the currently implemented AICL-C 0.1 pure-function subset, using five fixed test cases per task. The 5.88% source-token reduction and 2.06% prompt-plus-source reduction are corpus-specific. No model was called in that benchmark, so actual completion tokens, tool traffic, patch/edit tokens, debug/retry tokens, completion rate, and end-to-end agent workflow cost remain unmeasured.
