@@ -97,7 +97,7 @@ def test_runtime_checks_host_return_type(module):
         manifest,
         grants={"python:aicl_runtime_fixture.invalid_return"},
     )
-    with pytest.raises(AICLError, match="does not match i64"):
+    with pytest.raises(AICLError, match="must match i64"):
         runtime.call("invalid_return", [4])
 
 def test_runtime_copies_mutable_lists_across_the_host_boundary(module):
@@ -119,5 +119,5 @@ def test_runtime_bounds_list_size_and_nesting(module):
         manifest,
         grants={"python:aicl_runtime_fixture.mutate"},
     )
-    with pytest.raises(AICLError, match="10,000-item list limit"):
+    with pytest.raises(AICLError, match="10000-item list limit"):
         runtime.call("mutate", [[0] * 10_001])
