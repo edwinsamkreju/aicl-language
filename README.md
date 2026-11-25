@@ -51,6 +51,10 @@ AICL can lower its checked pure-function subset to Python AST and execute the co
 aicl run-python examples/clamp.aicl --function clamp --args '[15, 0, 10]'
 ~~~
 
+## Python ecosystem interoperability
+
+Python compatibility is a strategic design pillar, not just an implementation convenience. AICL is intended to combine its compact, typed, AI-facing representation with CPython execution, access to established Python packages, and adapters to Python developer tooling. The current CPython backend executes the pure AICL subset; direct, typed interoperability with installed Python modules is a separate capability and is not implemented yet. See [the Python interoperability architecture and staged plan](docs/PYTHON_INTEROP_STRATEGY.md).
+
 ## AI-first agent interface 0.1
 
 The agent interface is the preferred automation surface. It uses one JSON request per line on stdin and emits exactly one compact JSON response per request on stdout. It is designed for tool adapters and autonomous coding loops, not interactive human use.

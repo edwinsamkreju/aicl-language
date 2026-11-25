@@ -36,6 +36,12 @@ The design target is an AI-native programming system. The canonical typed IR and
 
 ## Milestone 3 — execution and compilation
 
+- [x] Establish optional CPython AST execution backend 0.1 for the pure subset; CI parity tests pass on Python 3.11 and 3.12.
+- [ ] Define typed Python module bindings and explicit host-call capability grants.
+- [ ] Implement Python package/module interop with signature manifests, version constraints, and deterministic value conversion.
+- [ ] Add adapters for Python packaging and environments (venv/pip), testing, and common developer tooling.
+- [ ] Benchmark real Python-library workflows against equivalent Python-only implementations for correctness, agent tokens, latency, and total cost.
+
 - [x] Validate AICL Python AST backend 0.1 parity tests and CLI execution on Python 3.11 and 3.12.
 
 - [ ] Design capability grants and effect boundaries before enabling external effects.

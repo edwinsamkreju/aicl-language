@@ -24,6 +24,12 @@ A shorter source file that causes more ambiguity, failures, or repair calls is n
 3. **Compact serialization layer — AICL-C and Patch Text.** Text is a transport/debug representation. It must preserve the canonical semantics and support targeted edits.
 4. **Execution layer.** The bounded reference interpreter remains the semantic oracle. An optional CPython AST backend now lowers the checked pure-function subset to generated Python AST and executes it with an explicit globals table. This reuses CPython while keeping Python details out of canonical IR and agent payloads.
 
+## Python ecosystem interoperability
+
+Python is a first-class ecosystem target. The strategic objective is to let AICL agents use the existing Python package ecosystem and developer infrastructure rather than rebuild it. CPython is the initial execution engine; package interop, typed host bindings, and toolchain integration are subsequent layers. The language core and canonical IR remain independent of Python so other backends and implementations remain possible.
+
+The detailed staged contract is in [Python interoperability strategy](PYTHON_INTEROP_STRATEGY.md). The key boundary is explicit typed imports and capability-granted host calls: AICL code must not gain ambient access to arbitrary modules, files, network, or processes. Agents should receive compact package manifests and only the signatures/types they need, not entire Python source trees or library documentation by default. That is how ecosystem reuse can coexist with low context-token usage.
+
 ## Python execution backend
 
 The optional backend is isolated under `src/aicl/backend/python/`. It type-checks before lowering, generates AST nodes rather than source strings, compiles with CPython, and executes with an empty `__builtins__` mapping plus an explicit set of AICL runtime helpers. It preserves list-returning `map`/`filter` semantics and ordered `unique` behavior for the supported subset. The reference interpreter remains the default and is used as the parity oracle.
