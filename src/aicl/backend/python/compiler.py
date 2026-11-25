@@ -7,8 +7,8 @@ from types import CodeType
 from typing import Any, Sequence
 
 from ...errors import AICLError
-from ...semantics import check_program
-from ...syntax import Expr, Program
+from ...ir import canonical_ir
+from ...syntax import Program
 
 _MAX_COLLECTION_ITEMS = 10_000
 
@@ -61,56 +61,57 @@ def _call(identifier: str, args: list[ast.expr]) -> ast.Call:
     return ast.Call(func=_name(identifier), args=args, keywords=[])
 
 
-def _lower_expr(expression: Expr, *, locals_map: dict[str, str], constants: set[str], functions: set[str]) -> ast.expr:
-    kind = expression.kind
+def _lower_expr(expression: dict[str, Any], *, locals_map: dict[str, str], constants: set[str], functions: set[str]) -> ast.expr:
+    """Lower one canonical AICL-IR node; the typed IR remains the source of truth."""
+    kind = expression["op"]
+    value = expression.get("value")
+    children = expression.get("children", [])
     if kind == "literal":
-        return ast.Constant(value=expression.value)
+        return ast.Constant(value=value)
     if kind == "name":
-        value = str(expression.value)
-        if value in locals_map:
-            return _name(locals_map[value])
-        if value in constants:
-            return _name(f"_c_{value}")
-        if value in functions:
-            return _name(f"_f_{value}")
-        if value in _VALUE_TARGETS:
-            return _name(_VALUE_TARGETS[value])
-        raise AICLError("E-PYBACKEND-001", f"Unsupported value reference {value!r}")
+        identifier = str(value)
+        if identifier in locals_map:
+            return _name(locals_map[identifier])
+        if identifier in constants:
+            return _name(f"_c_{identifier}")
+        if identifier in functions:
+            return _name(f"_f_{identifier}")
+        if identifier in _VALUE_TARGETS:
+            return _name(_VALUE_TARGETS[identifier])
+        raise AICLError("E-PYBACKEND-001", f"Unsupported value reference {identifier!r}")
     if kind == "unary":
-        operand = _lower_expr(expression.children[0], locals_map=locals_map, constants=constants, functions=functions)
-        operator = ast.USub() if expression.value == "-" else ast.Not()
+        operand = _lower_expr(children[0], locals_map=locals_map, constants=constants, functions=functions)
+        operator = ast.USub() if value == "-" else ast.Not()
         return ast.UnaryOp(op=operator, operand=operand)
     if kind == "binary":
-        left, right = expression.children
-        lhs = _lower_expr(left, locals_map=locals_map, constants=constants, functions=functions)
-        rhs = _lower_expr(right, locals_map=locals_map, constants=constants, functions=functions)
+        lhs = _lower_expr(children[0], locals_map=locals_map, constants=constants, functions=functions)
+        rhs = _lower_expr(children[1], locals_map=locals_map, constants=constants, functions=functions)
         binary_ops = {"+": ast.Add, "-": ast.Sub, "*": ast.Mult, "/": ast.Div, "%": ast.Mod}
         compare_ops = {"==": ast.Eq, "!=": ast.NotEq, "<": ast.Lt, "<=": ast.LtE, ">": ast.Gt, ">=": ast.GtE}
-        operator = expression.value
-        if operator in binary_ops:
-            return ast.BinOp(left=lhs, op=binary_ops[operator](), right=rhs)
-        if operator in compare_ops:
-            return ast.Compare(left=lhs, ops=[compare_ops[operator]()], comparators=[rhs])
-        if operator == "&&":
+        if value in binary_ops:
+            return ast.BinOp(left=lhs, op=binary_ops[value](), right=rhs)
+        if value in compare_ops:
+            return ast.Compare(left=lhs, ops=[compare_ops[value]()], comparators=[rhs])
+        if value == "&&":
             return ast.BoolOp(op=ast.And(), values=[lhs, rhs])
-        if operator == "||":
+        if value == "||":
             return ast.BoolOp(op=ast.Or(), values=[lhs, rhs])
-        raise AICLError("E-PYBACKEND-002", f"Unsupported binary operator {operator!r}")
+        raise AICLError("E-PYBACKEND-002", f"Unsupported binary operator {value!r}")
     if kind == "call":
-        target = _CALL_TARGETS.get(str(expression.value), f"_f_{expression.value}")
-        args = [_lower_expr(arg, locals_map=locals_map, constants=constants, functions=functions) for arg in expression.children]
+        target = _CALL_TARGETS.get(str(value), f"_f_{value}")
+        args = [_lower_expr(arg, locals_map=locals_map, constants=constants, functions=functions) for arg in children]
         return _call(target, args)
     if kind == "pipe":
-        left, right = expression.children
-        target_name = str(right.value)
+        left, right = children
+        target_name = str(right.get("value"))
         target = _CALL_TARGETS.get(target_name, f"_f_{target_name}")
         args = [_lower_expr(left, locals_map=locals_map, constants=constants, functions=functions)]
-        if right.kind == "call":
-            args.extend(_lower_expr(arg, locals_map=locals_map, constants=constants, functions=functions) for arg in right.children)
-        elif right.kind != "name":
+        if right["op"] == "call":
+            args.extend(_lower_expr(arg, locals_map=locals_map, constants=constants, functions=functions) for arg in right.get("children", []))
+        elif right["op"] != "name":
             raise AICLError("E-PYBACKEND-003", "Invalid AICL pipeline target")
         return _call(target, args)
-    raise AICLError("E-PYBACKEND-004", f"Unsupported AICL expression node {kind!r}")
+    raise AICLError("E-PYBACKEND-004", f"Unsupported AICL IR expression node {kind!r}")
 
 
 def _matches_type(value: Any, type_name: str) -> bool:
@@ -160,19 +161,24 @@ class CompiledProgram:
 
 def compile_program(program: Program) -> CompiledProgram:
     """Type-check, lower to Python AST, and compile an AICL module with CPython."""
-    check_program(program)
-    function_names = {function.name for function in program.functions}
-    all_constant_names = {constant.name for constant in program.constants}
+    ir = canonical_ir(program)
+    function_names = {function["name"] for function in ir["functions"]}
+    all_constant_names = {constant["name"] for constant in ir["constants"]}
+    constants_by_name = {constant["name"]: constant for constant in ir["constants"]}
     module_body: list[ast.stmt] = []
-    for function in program.functions:
-        local_names = {parameter.name: f"_p{index}" for index, parameter in enumerate(function.parameters)}
-        args = ast.arguments(posonlyargs=[], args=[ast.arg(arg=local_names[p.name]) for p in function.parameters], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[])
-        body = _lower_expr(function.body, locals_map=local_names, constants=all_constant_names, functions=function_names)
-        module_body.append(ast.FunctionDef(name=f"_f_{function.name}", args=args, body=[ast.Return(value=body)], decorator_list=[], returns=None, type_comment=None))
+    for function in ir["functions"]:
+        local_names = {parameter["name"]: f"_p{index}" for index, parameter in enumerate(function["parameters"])}
+        args = ast.arguments(posonlyargs=[], args=[ast.arg(arg=local_names[p["name"]]) for p in function["parameters"]], vararg=None, kwonlyargs=[], kw_defaults=[], kwarg=None, defaults=[])
+        body = _lower_expr(function["body"], locals_map=local_names, constants=all_constant_names, functions=function_names)
+        module_body.append(ast.FunctionDef(name=f"_f_{function['name']}", args=args, body=[ast.Return(value=body)], decorator_list=[], returns=None, type_comment=None))
 
+    # Preserve declaration order for constant initializers; the IR contract
+    # canonicalizes the serialized array order, but constants may depend on
+    # earlier declarations in the source module.
     prior_constants: set[str] = set()
     for constant in program.constants:
-        value = _lower_expr(constant.value, locals_map={name: f"_c_{name}" for name in prior_constants}, constants=prior_constants, functions=function_names)
+        initializer = constants_by_name[constant.name]["initializer"]
+        value = _lower_expr(initializer, locals_map={name: f"_c_{name}" for name in prior_constants}, constants=prior_constants, functions=function_names)
         module_body.append(ast.Assign(targets=[ast.Name(id=f"_c_{constant.name}", ctx=ast.Store())], value=value, type_comment=None))
         prior_constants.add(constant.name)
 
