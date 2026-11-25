@@ -39,6 +39,7 @@ The design target is an AI-native programming system. Canonical typed IR and the
 
 - [x] Add optional CPython AST backend 0.1 for the checked pure-function subset.
 - [x] Verify backend/reference-interpreter parity and CLI execution on Python 3.11 and 3.12.
+- [x] Add CI microbenchmarks separating parse, compile/setup, and warmed execution costs on Python 3.11 and 3.12.
 - [x] Add selected-symbol Python API manifests with strict annotation mapping, deterministic hashes, and package metadata.
 - [x] Add an in-process Python binding runtime with manifest revalidation, explicit per-function grants, argument validation, and return validation.
 - [ ] Define AICL source-level Python imports and host-call semantics in a versioned language/IR revision.
@@ -46,7 +47,8 @@ The design target is an AI-native programming system. Canonical typed IR and the
 - [ ] Expand type conversion to options/results, records, tensor/array views, and explicit ownership/lifetime rules.
 - [ ] Add Python environment/lockfile integration and reproducible package resolution.
 - [ ] Add bidirectional Python↔AICL embedding APIs and developer-tool adapters.
-- [ ] Benchmark mixed Python/AICL library workflows against Python-only baselines, including compile/setup cost and complete agent usage.
+- [ ] Analyze compile-time amortization on representative multi-function/library workloads.
+- [ ] Benchmark mixed Python/AICL library workflows against Python-only baselines, including complete agent usage.
 
 ## Milestone 4 — additional execution targets
 

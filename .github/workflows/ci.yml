@@ -22,6 +22,14 @@ jobs:
         run: python benchmarks/generate_suite.py --output /tmp/paired_suite.json
       - name: Run 100-task Python/AICL equivalence benchmark
         run: python benchmarks/run_equivalent_tasks.py --suite /tmp/paired_suite.json --encoding cl100k_base --repeats 20 --json-out benchmark-results.json
+      - name: Benchmark CPython backend setup and warmed calls
+        run: python benchmarks/benchmark_python_backend.py --json-out python-backend-results.json
+      - name: Upload CPython backend benchmark
+        uses: actions/upload-artifact@v4
+        with:
+          name: aicl-python-backend-results-${{ matrix.python-version }}
+          path: python-backend-results.json
+          if-no-files-found: error
       - name: CLI smoke test
         run: |
           aicl check examples/clamp.aicl

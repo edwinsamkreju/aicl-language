@@ -45,7 +45,7 @@ The compact output has identical JSON semantics to the pretty representation. Th
 
 ## Optional CPython execution backend
 
-AICL can lower its checked pure-function subset to Python AST and execute the compiled code through CPython. This reuses the Python runtime without making Python syntax, bytecode, or runtime objects part of the canonical AICL-IR contract. The backend is optional, adds no runtime package dependency, and does not change agent-protocol payloads. See [the backend design and limits](docs/PYTHON_BACKEND.md).
+AICL can lower its checked pure-function subset to Python AST and execute the compiled code through CPython. This reuses the Python runtime without making Python syntax, bytecode, or runtime objects part of the canonical AICL-IR contract. The backend is optional, adds no runtime package dependency, and does not change agent-protocol payloads. CI measures parse/compile setup separately from warmed calls on Python 3.11 and 3.12. See [the backend design and limits](docs/PYTHON_BACKEND.md).
 
 ~~~bash
 aicl run-python examples/clamp.aicl --function clamp --args '[15, 0, 10]'

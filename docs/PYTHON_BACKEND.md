@@ -28,6 +28,10 @@ aicl run-python examples/clamp.aicl --function clamp --args '[15, 0, 10]'
 
 The default `aicl run` command continues to use the reference interpreter.
 
+## Performance measurement
+
+CI runs `benchmarks/benchmark_python_backend.py` on Python 3.11 and 3.12 and uploads one JSON report per version. The report separates parse time, CPython lowering/compile time, reference-interpreter setup, warmed interpreter calls, raw compiled calls, validated compiled calls, and the existing one-shot reference API. It checks result parity before timing. These numbers are diagnostic microbenchmarks; they are not application throughput or AI-agent workflow savings. Compare setup cost and warmed calls together before claiming a speedup.
+
 ## Boundaries and non-goals
 
 - The canonical AICL-IR schema, module hash, compact source, patch format, and Agent Protocol 0.1 are unchanged.
