@@ -63,7 +63,7 @@ AICL can emit signature-only manifests for selected, type-annotated Python funct
 aicl py-manifest my_package.math_ops add normalize
 ~~~
 
-The default JSON is compact and content-addressed. This is API discovery, not permission to execute a host call. Importing a Python module runs its initialization code, so inspect only trusted installed packages. See [Python binding manifests](docs/PYTHON_BINDINGS.md) and [the versioned schema](spec/aicl-python-bindings-0.1.schema.json). Runtime invocation from AICL syntax is not implemented yet.
+The default JSON is compact and content-addressed. Python embedding applications can use `PythonBindingRuntime` to call selected exports only with explicit per-function capability grants and a matching manifest hash. This is an in-process bridge, not a sandbox; use only trusted packages. Importing a module runs its initialization code. AICL source-level imports and host-call syntax are not implemented yet. See [Python binding manifests and runtime](docs/PYTHON_BINDINGS.md) and [the versioned schema](spec/aicl-python-bindings-0.1.schema.json).
 
 ## AI-first agent interface 0.1
 

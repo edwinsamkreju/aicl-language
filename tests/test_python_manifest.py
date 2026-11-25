@@ -71,6 +71,13 @@ def test_manifest_supports_nested_list_annotations():
     assert manifest["exports"][0]["parameters"][0]["type"] == "List[List[i64]]"
     assert manifest["exports"][0]["return_type"] == "List[i64]"
 
+    local.flatten.__annotations__ = {
+        "values": "typing.List[typing.List[int]]",
+        "return": "typing.List[int]",
+    }
+    qualified = build_manifest(local, ["flatten"])
+    assert qualified["exports"][0]["parameters"][0]["type"] == "List[List[i64]]"
+
 
 def test_manifest_cli_emits_compact_json(monkeypatch, capsys, module):
     monkeypatch.setitem(sys.modules, module.__name__, module)

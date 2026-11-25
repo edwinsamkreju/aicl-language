@@ -32,12 +32,18 @@ def _annotation_name(annotation: Any) -> str:
             raise AICLError("E-PYBIND-004", f"Unsupported annotation {annotation!r}") from exc
         if isinstance(expression, ast.Name) and expression.id in _TYPE_TEXT:
             return _TYPE_TEXT[expression.id]
-        if (
-            isinstance(expression, ast.Subscript)
-            and isinstance(expression.value, ast.Name)
-            and expression.value.id in {"list", "List"}
-        ):
-            return f"List[{_annotation_name(ast.unparse(expression.slice))}]"
+        if isinstance(expression, ast.Subscript):
+            container = expression.value
+            is_list = (
+                isinstance(container, ast.Name) and container.id in {"list", "List"}
+            ) or (
+                isinstance(container, ast.Attribute)
+                and isinstance(container.value, ast.Name)
+                and container.value.id == "typing"
+                and container.attr == "List"
+            )
+            if is_list:
+                return f"List[{_annotation_name(ast.unparse(expression.slice))}]"
         raise AICLError("E-PYBIND-004", f"Unsupported annotation {annotation!r}")
 
     if annotation in _TYPE_NAMES:

@@ -32,7 +32,9 @@ This is illustrative only; it is not accepted AICL syntax or a current implement
 
 **First slice implemented:** `aicl py-manifest MODULE SYMBOL...` emits a deterministic, compact manifest for explicitly selected, type-annotated module-level functions. The versioned contract is `spec/aicl-python-bindings-0.1.schema.json`; the implementation is `src/aicl/python_interop/manifest.py`. It rejects unsupported annotations, variadic/async exports, classes, and dynamic guesses. It records a canonical hash and host capability name, but does not execute the function. Module imports execute package initialization, so manifest generation is restricted to trusted environments.
 
-The runtime interoperability design must define:
+**Second slice implemented:** `PythonBindingRuntime` revalidates a manifest against the installed package, requires explicit per-export capability grants, validates positional and keyword arguments against supported AICL types, and checks return values. It is an in-process bridge for trusted Python applications, not a sandbox. AICL source-level imports/host calls, process isolation, and quotas remain unimplemented.
+
+The full runtime interoperability design must still define:
 - A versioned module-binding manifest containing exported symbols, signatures, type mappings, package identity, and version constraints.
 - A typed value-conversion boundary between AICL values and Python objects.
 - Explicit host-call declarations and capability grants; no ambient arbitrary module access.
@@ -83,8 +85,8 @@ AICL should not claim lower token use simply because its own source is shorter. 
 ## Delivery sequence
 
 1. Stabilize the current CPython backend and its differential test coverage.
-2. Specify a language-neutral host-call and capability model.
-3. Extend the initial signature-only manifest with a validated type mapping and package/environment identity.
+2. Define AICL source-level host-call semantics and a versioned IR representation that reuses the capability naming established by the in-process bridge.
+3. Extend the initial scalar/list type map to structured values, arrays, and ownership-aware conversions.
 4. Prototype pure-function bindings for a small, well-understood standard-library surface.
 5. Add a controlled third-party package adapter and lockfile/environment metadata.
 6. Add bidirectional Python↔AICL embedding APIs.
