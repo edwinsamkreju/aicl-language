@@ -38,7 +38,7 @@ This is not a hardened sandbox: it has no explicit step/depth budget, capability
 
 ## Python API discovery
 
-A signature-only Python binding manifest can be generated for an explicitly selected set of annotated module functions. Its deterministic hash and compact JSON layout let agents retrieve a few exact signatures instead of source files or full package documentation. Manifest generation imports trusted modules and does not call their functions. The in-process `PythonBindingRuntime` revalidates manifests, requires exact per-function grants, and validates argument and result types. It is not a sandbox; AICL source-level host-call dispatch, process isolation, and quotas remain future work.
+A compact Python binding manifest (0.2) can be generated for selected functions using annotations or reviewed explicit signatures. It records package/distribution and Python interpreter identity with a deterministic content hash. The in-process `PythonBindingRuntime` revalidates that manifest and enforces exact per-function grants, argument/result types, bounded pass-by-value list conversion, aggregate value limits, and awaitable rejection. This is for trusted Python embedding applications, not a sandbox; AICL source-level host-call dispatch and process isolation remain future work.
 
 ## Canonical IR contract and transport
 

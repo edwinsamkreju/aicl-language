@@ -33,7 +33,7 @@ runtime = PythonBindingRuntime.bind(
 result = runtime.call("add", [2, 3])
 ```
 
-The binding runtime re-imports the module, rebuilds the manifest, and rejects a stale or modified manifest. It validates positional/keyword arguments, required parameters, AICL-compatible types, and return values. Supported mutable lists are copied across the boundary by value and bounded to 10,000 items per list and 32 nested list levels. Calls not included in the manifest or not covered by an explicit capability grant are rejected.
+The binding runtime re-imports the module, rebuilds the manifest, and rejects a stale or modified manifest. It validates positional/keyword arguments, required parameters, AICL-compatible types, and return values. Supported mutable lists are copied across the boundary by value and bounded to 10,000 items per list, 100,000 total list items per call, and 32 nested list levels. Awaitable results are rejected. Calls not included in the manifest or not covered by an explicit capability grant are rejected.
 
 **This runs package code in the current Python process. It is not a sandbox.** Use only trusted packages and functions. Native extensions, annotated functions, and explicit grants are not proof of safety; the bridge has no process isolation, timeout, or resource quotas. AICL source-level host-call syntax and enforceable sandboxing are not implemented yet.
 
