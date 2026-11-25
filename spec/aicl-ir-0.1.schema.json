@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicl.invalid/spec/aicl-ir-0.1.schema.json",
+  "title": "AICL canonical typed IR 0.1",
+  "description": "Language-neutral JSON contract for canonical AICL-IR documents. The module hash is SHA-256 over canonical JSON of the ir object, not this wrapper.",
+  "type": "object",
+  "required": ["module_hash", "ir"],
+  "additionalProperties": false,
+  "properties": {
+    "module_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "ir": {
+      "type": "object",
+      "required": ["schema", "module_version", "constants", "functions"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "aicl-ir/0.1" },
+        "module_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+        "constants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "type", "initializer"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "$ref": "#/$defs/identifier" },
+              "type": { "$ref": "#/$defs/type" },
+              "initializer": { "$ref": "#/$defs/node" }
+            }
+          }
+        },
+        "functions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "parameters", "return_type", "effect", "body"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "$ref": "#/$defs/identifier" },
+              "parameters": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type", "id"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": { "$ref": "#/$defs/identifier" },
+                    "type": { "$ref": "#/$defs/type" },
+                    "id": { "type": "string" }
+                  }
+                }
+              },
+              "return_type": { "$ref": "#/$defs/type" },
+              "effect": { "const": "pure" },
+              "body": { "$ref": "#/$defs/node" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+    "type": {
+      "oneOf": [
+        { "enum": ["i64", "f64", "bool", "Str"] },
+        { "type": "string", "pattern": "^List\\[(i64|f64|bool|Str|List\\[.*\\])\\]$" }
+      ]
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "op"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "op": { "enum": ["literal", "name", "unary", "binary", "call", "pipe"] },
+        "value": {},
+        "type": { "type": "string", "minLength": 1 },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/node" }
+        }
+      }
+    }
+  }
+}

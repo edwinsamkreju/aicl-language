@@ -58,6 +58,10 @@ GitHub Actions run 73: [view run](https://github.com/edwinsamkreju/aicl-language
 
 The new interface reduces unnecessary context retrieval for supported edit tasks. It has not yet been benchmarked against a live model for total tokens, task success, or end-to-end latency. No live model calls were made.
 
+## Canonical IR contract and compact transport
+
+Added `spec/aicl-ir-0.1.schema.json`, `aicl ir --compact`, and `aicl ir --hash-only`. The compact output is parsed in tests and compared semantically with pretty output; the hash-only mode is checked against the canonical module hash. This is a transport/contract improvement, not a binary IR or a live-agent token benchmark.
+
 ## Limits and next step
 
 The 100-task suite tests only the currently implemented AICL-C 0.1 pure-function subset, using five fixed test cases per task. The 5.88% source-token reduction and 2.06% prompt-plus-source reduction are corpus-specific. No model was called in that benchmark, so actual completion tokens, tool traffic, patch/edit tokens, debug/retry tokens, completion rate, and end-to-end agent workflow cost remain unmeasured.

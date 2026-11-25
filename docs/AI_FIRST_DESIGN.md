@@ -24,6 +24,12 @@ A shorter source file that causes more ambiguity, failures, or repair calls is n
 3. **Compact serialization layer — AICL-C and Patch Text.** Text is a transport/debug representation. It must preserve the canonical semantics and support targeted edits.
 4. **Execution layer.** A compiler/runtime executes verified IR under explicit resource and capability limits. The current Python AST interpreter is only a reference implementation.
 
+## Canonical IR contract and transport
+
+The repository now publishes `spec/aicl-ir-0.1.schema.json` as a language-neutral contract for the canonical typed IR document. The CLI supports `aicl ir FILE --compact` for whitespace-minimized canonical JSON and `--hash-only` for content-addressed module identity. Both use the same canonical IR and hash semantics as the Python implementation.
+
+This makes the interchange format explicit, but does not yet prove implementation independence: a second-language encoder/decoder and cross-implementation hash conformance suite remain outstanding. A binary encoding should be evaluated only after these canonical semantics are stable.
+
 ## Implemented first slice
 
 AICL Agent Protocol 0.1 provides:

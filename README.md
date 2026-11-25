@@ -31,6 +31,17 @@ aicl run examples/clamp.aicl --function clamp --args '[15, 0, 10]'
 
 Expected output: **{"result": 10}**.
 
+## Canonical IR machine transport
+
+AICL-IR 0.1 has a language-neutral JSON Schema contract at [spec/aicl-ir-0.1.schema.json](spec/aicl-ir-0.1.schema.json). The CLI can emit whitespace-minimized canonical JSON or only the content hash:
+
+~~~bash
+aicl ir examples/clamp.aicl --compact
+aicl ir examples/clamp.aicl --hash-only
+~~~
+
+The compact output has identical JSON semantics to the pretty representation. The module hash is SHA-256 over canonical JSON of the `ir` object. This is a versioned interchange contract, not yet a binary encoding or a second-language implementation.
+
 ## AI-first agent interface 0.1
 
 The agent interface is the preferred automation surface. It uses one JSON request per line on stdin and emits exactly one compact JSON response per request on stdout. It is designed for tool adapters and autonomous coding loops, not interactive human use.

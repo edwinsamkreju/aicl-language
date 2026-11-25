@@ -19,7 +19,7 @@ The design target is an AI-native programming system. The canonical typed IR and
 
 ## Milestone 1 — machine-first semantic interface
 
-- [ ] Version the IR independently from the Python implementation.
+- [x] Publish the versioned, language-neutral AICL-IR 0.1 JSON Schema contract and compact/hash-only CLI transport.\n- [ ] Implement an independent second-language IR encoder/decoder and cross-implementation canonical-hash conformance tests.
 - [ ] Add stable semantic identities that survive unrelated tree edits.
 - [ ] Add compact binary IR encoding and incremental serialization.
 - [ ] Add structured diagnostics with exact node IDs and machine-actionable repair hints.

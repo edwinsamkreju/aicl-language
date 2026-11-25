@@ -29,6 +29,9 @@ def build_parser():
 
     ir = commands.add_parser("ir", help="emit canonical typed AICL-IR as JSON")
     ir.add_argument("file")
+    output = ir.add_mutually_exclusive_group()
+    output.add_argument("--compact", action="store_true", help="emit whitespace-minimized canonical JSON for machine transport")
+    output.add_argument("--hash-only", action="store_true", help="emit only the canonical module SHA-256")
 
     run = commands.add_parser("run", help="run a pure function in the reference interpreter")
     run.add_argument("file")
@@ -69,7 +72,13 @@ def main(argv=None):
             }, indent=2))
             return 0
         if args.command == "ir":
-            print(json.dumps(ir_document(program), indent=2, ensure_ascii=False))
+            document = ir_document(program)
+            if args.hash_only:
+                print(document["module_hash"])
+            elif args.compact:
+                print(json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+            else:
+                print(json.dumps(document, indent=2, ensure_ascii=False, sort_keys=True))
             return 0
         if args.command == "run":
             try:
