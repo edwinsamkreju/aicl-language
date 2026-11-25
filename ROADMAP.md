@@ -36,8 +36,12 @@ The design target is an AI-native programming system. The canonical typed IR and
 
 ## Milestone 3 — execution and compilation
 
+- [ ] Complete AICL Python AST backend 0.1 parity tests and cross-version CI validation for the pure-function subset.
+
 - [ ] Design capability grants and effect boundaries before enabling external effects.
-- [ ] Select a compiler backend from benchmark evidence.
+- [x] Add an optional CPython AST backend for the current pure-function subset; keep the canonical IR Python-independent.
+- [ ] Benchmark compiled execution against the reference interpreter, including compile-time amortization.
+- [ ] Select additional compiler backends from benchmark evidence.
 - [ ] Implement lowering and backend/reference-interpreter parity tests.
 - [ ] Add deterministic, resource-bounded execution and hardened isolation.
 

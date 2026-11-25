@@ -40,6 +40,11 @@ def build_parser():
     run.add_argument("--max-steps", type=int, default=100000)
     run.add_argument("--max-depth", type=int, default=128)
 
+    python_run = commands.add_parser("run-python", help="run a pure AICL module through the optional CPython AST backend")
+    python_run.add_argument("file")
+    python_run.add_argument("--function", required=True)
+    python_run.add_argument("--args", default="[]")
+
     patch = commands.add_parser("patch", help="apply a hash-guarded JSON or compact AICL Patch Text 0.2 patch")
     patch.add_argument("file")
     patch.add_argument("patch_file")
@@ -80,19 +85,23 @@ def main(argv=None):
             else:
                 print(json.dumps(document, indent=2, ensure_ascii=False, sort_keys=True))
             return 0
-        if args.command == "run":
+        if args.command in {"run", "run-python"}:
             try:
                 values = json.loads(args.args)
             except json.JSONDecodeError as exc:
                 raise AICLError("E-CLI-001", f"--args must be a JSON array: {exc.msg}") from exc
             if not isinstance(values, list):
                 raise AICLError("E-CLI-002", "--args must decode to a JSON array")
-            result = run_function(
-                program,
-                args.function,
-                values,
-                budget=ExecutionBudget(max_steps=args.max_steps, max_depth=args.max_depth),
-            )
+            if args.command == "run-python":
+                from .backend.python import compile_program
+                result = compile_program(program).run_function(args.function, values)
+            else:
+                result = run_function(
+                    program,
+                    args.function,
+                    values,
+                    budget=ExecutionBudget(max_steps=args.max_steps, max_depth=args.max_depth),
+                )
             print(json.dumps({"result": result}, ensure_ascii=False))
             return 0
     except AICLError as exc:

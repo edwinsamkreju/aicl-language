@@ -22,7 +22,13 @@ A shorter source file that causes more ambiguity, failures, or repair calls is n
 1. **Canonical semantic layer — AICL-IR.** A versioned typed representation is the semantic source of truth. It must be deterministic, content-addressable, and independent of the Python prototype implementation.
 2. **Agent interaction layer — AICL Agent Protocol.** Agents retrieve bounded context slices, inspect symbol/type information, submit preconditioned patches, and receive structured diagnostics.
 3. **Compact serialization layer — AICL-C and Patch Text.** Text is a transport/debug representation. It must preserve the canonical semantics and support targeted edits.
-4. **Execution layer.** A compiler/runtime executes verified IR under explicit resource and capability limits. The current Python AST interpreter is only a reference implementation.
+4. **Execution layer.** The bounded reference interpreter remains the semantic oracle. An optional CPython AST backend now lowers the checked pure-function subset to generated Python AST and executes it with an explicit globals table. This reuses CPython while keeping Python details out of canonical IR and agent payloads.
+
+## Python execution backend
+
+The optional backend is isolated under `src/aicl/backend/python/`. It type-checks before lowering, generates AST nodes rather than source strings, compiles with CPython, and executes with an empty `__builtins__` mapping plus an explicit set of AICL runtime helpers. It preserves list-returning `map`/`filter` semantics and ordered `unique` behavior for the supported subset. The reference interpreter remains the default and is used as the parity oracle.
+
+This is not a hardened sandbox: it has no explicit step/depth budget, capability system, or process isolation. It must not be used to execute untrusted AICL until those controls exist. The backend does not alter AICL source syntax, canonical IR, hashes, patch encoding, or JSONL agent responses. Compilation overhead and warmed execution performance still require measurement before making performance claims.
 
 ## Canonical IR contract and transport
 

@@ -27,9 +27,10 @@ Check and run an example:
 ~~~bash
 aicl check examples/clamp.aicl
 aicl run examples/clamp.aicl --function clamp --args '[15, 0, 10]'
+aicl run-python examples/clamp.aicl --function clamp --args '[15, 0, 10]'
 ~~~
 
-Expected output: **{"result": 10}**.
+Both commands return **{"result": 10}**. `run` uses the bounded reference interpreter; `run-python` uses the optional CPython AST backend. The backend is not a security sandbox and does not yet provide the reference interpreter step/depth budgets.
 
 ## Canonical IR machine transport
 
@@ -41,6 +42,14 @@ aicl ir examples/clamp.aicl --hash-only
 ~~~
 
 The compact output has identical JSON semantics to the pretty representation. The module hash is SHA-256 over canonical JSON of the `ir` object. This is a versioned interchange contract, not yet a binary encoding or a second-language implementation.
+
+## Optional CPython execution backend
+
+AICL can lower its checked pure-function subset to Python AST and execute the compiled code through CPython. This reuses the Python runtime without making Python syntax, bytecode, or runtime objects part of the canonical AICL-IR contract. The backend is optional, adds no runtime package dependency, and does not change agent-protocol payloads. See [the backend design and limits](docs/PYTHON_BACKEND.md).
+
+~~~bash
+aicl run-python examples/clamp.aicl --function clamp --args '[15, 0, 10]'
+~~~
 
 ## AI-first agent interface 0.1
 
@@ -139,6 +148,7 @@ See [the live-agent experiment protocol](docs/LIVE_AGENT_EXPERIMENT.md), [run ch
 
 ~~~
 src/aicl/                 Parser, type checker, typed IR, agent protocol, interpreter, patcher, CLI
+src/aicl/backend/python/  Optional typed-IR-to-Python-AST backend
 spec/                     AICL-C grammar, IR schema, agent request schema, compact patch grammar
 examples/                 AICL programs and compact patch example
 benchmarks/               Token, patch, equivalent-task and live-agent benchmarks
