@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
@@ -11,11 +12,21 @@ from .manifest import SCHEMA, load_manifest
 
 
 _MAX_LIST_ITEMS = 10_000
+_MAX_TOTAL_LIST_ITEMS = 100_000
 _MAX_VALUE_DEPTH = 32
 
 
-def _convert(value: Any, type_name: str, *, path: str, depth: int = 0) -> Any:
+def _convert(
+    value: Any,
+    type_name: str,
+    *,
+    path: str,
+    depth: int = 0,
+    item_budget: list[int] | None = None,
+) -> Any:
     """Validate an AICL value and detach mutable lists from host-owned objects."""
+    if item_budget is None:
+        item_budget = [0]
     if depth > _MAX_VALUE_DEPTH:
         raise AICLError("E-PYBIND-038", f"{path} exceeds the {_MAX_VALUE_DEPTH}-level nesting limit")
     if type_name == "bool" and isinstance(value, bool):
@@ -33,9 +44,21 @@ def _convert(value: Any, type_name: str, *, path: str, depth: int = 0) -> Any:
         if isinstance(value, list):
             if len(value) > _MAX_LIST_ITEMS:
                 raise AICLError("E-PYBIND-037", f"{path} exceeds the {_MAX_LIST_ITEMS}-item list limit")
+            item_budget[0] += len(value)
+            if item_budget[0] > _MAX_TOTAL_LIST_ITEMS:
+                raise AICLError(
+                    "E-PYBIND-039",
+                    f"{path} exceeds the {_MAX_TOTAL_LIST_ITEMS}-item aggregate value limit",
+                )
             item_type = type_name[5:-1]
             return [
-                _convert(item, item_type, path=f"{path}[{index}]", depth=depth + 1)
+                _convert(
+                    item,
+                    item_type,
+                    path=f"{path}[{index}]",
+                    depth=depth + 1,
+                    item_budget=item_budget,
+                )
                 for index, item in enumerate(value)
             ]
     raise AICLError("E-PYBIND-034", f"{path} must match {type_name}")
@@ -95,8 +118,22 @@ class PythonBindingRuntime:
         if unknown:
             raise AICLError("E-PYBIND-024", f"Grant does not exist in manifest: {sorted(unknown)!r}")
 
+        explicit_declarations = {}
+        for entry in exports:
+            if entry.get("type_source") == "explicit":
+                explicit_declarations[entry["name"]] = {
+                    "parameters": entry.get("parameters"),
+                    "return_type": entry.get("return_type"),
+                }
+            elif entry.get("type_source") != "annotations":
+                raise AICLError("E-PYBIND-020", "Unknown Python binding type source")
+
         try:
-            current = load_manifest(module_name, names)
+            current = load_manifest(
+                module_name,
+                names,
+                declarations=explicit_declarations or None,
+            )
             module = importlib.import_module(module_name)
         except AICLError:
             raise
@@ -147,6 +184,7 @@ class PythonBindingRuntime:
                 raise AICLError("E-PYBIND-032", f"Multiple values for parameter {key!r}")
             supplied[key] = value
 
+        item_budget = [0]
         for parameter in parameters:
             key = parameter["name"]
             if parameter["required"] and key not in supplied:
@@ -156,6 +194,7 @@ class PythonBindingRuntime:
                     supplied[key],
                     parameter["type"],
                     path=f"Argument {key!r}",
+                    item_budget=item_budget,
                 )
 
         call_args = []
@@ -177,8 +216,15 @@ class PythonBindingRuntime:
         except Exception as exc:
             raise AICLError("E-PYBIND-035", f"Python host call failed: {type(exc).__name__}: {exc}") from exc
 
+        if inspect.isawaitable(result):
+            close = getattr(result, "close", None)
+            if callable(close):
+                close()
+            raise AICLError("E-PYBIND-040", "Awaitable host-call results are not supported by bindings 0.2")
+
         return _convert(
             result,
             entry["return_type"],
             path=f"Python result from {name!r}",
+            item_budget=item_budget,
         )

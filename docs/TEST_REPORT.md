@@ -80,3 +80,21 @@ The 100-task suite tests only the currently implemented AICL-C 0.1 pure-function
 
 The next step is to run the 10-task/two-trial live-agent pilot using the same exact model snapshot, tokenizer, shared experiment configuration, task descriptions, test oracle, tools and repair limits for both languages. Preserve provider-reported usage events for every request and analyze them with benchmarks/analyze_agent_traces.py before scaling up.
 
+
+
+## CPython AST backend microbenchmark
+
+GitHub Actions run 92: [both Python matrix jobs passed](https://github.com/edwinsamkreju/aicl-language/actions/runs/45650641480). The run uploaded separate JSON artifacts for Python 3.11 and 3.12.
+
+Single-function diagnostic using `examples/clamp.aicl`, 100,000 warmed calls per repeat, seven repeats:
+
+| Measurement | Python 3.11.18 | Python 3.12.16 |
+|---|---:|---:|
+| Parse median | 38.592 μs | 31.270 μs |
+| CPython AST compile + type-check median | 111.861 μs | 89.303 μs |
+| Reference interpreter setup + type-check median | 3.604 μs | 3.027 μs |
+| Warmed reference interpreter call | 3.070 μs | 2.744 μs |
+| Warmed CPython backend, checked API | 1.221 μs | 1.278 μs |
+| Warmed generated CPython function, raw | 0.334 μs | 0.378 μs |
+
+The checked CPython path had about 2.1×–2.5× lower median latency than the warmed reference interpreter for this one small function. Its additional compile cost over reference-interpreter setup is recovered after approximately 59–60 repeated calls in this fixture. This is a microbenchmark, not a representative application or whole-language result. It does not establish an overall AICL-versus-Python speedup or lower live-agent workflow cost. More representative multi-function, list, package, and mixed Python/AICL workloads are required.

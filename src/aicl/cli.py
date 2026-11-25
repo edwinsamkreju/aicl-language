@@ -44,6 +44,7 @@ def build_parser():
     manifest.add_argument("module")
     manifest.add_argument("symbols", nargs="+")
     manifest.add_argument("--pretty", action="store_true", help="format the manifest for human review")
+    manifest.add_argument("--declarations", help="JSON file containing explicit signatures for unannotated Python APIs")
 
     python_run = commands.add_parser("run-python", help="run a pure AICL module through the optional CPython AST backend")
     python_run.add_argument("file")
@@ -68,7 +69,17 @@ def main(argv=None):
     try:
         if args.command == "py-manifest":
             from .python_interop import load_manifest
-            document = load_manifest(args.module, args.symbols)
+            declarations = None
+            if args.declarations:
+                try:
+                    declarations = json.loads(Path(args.declarations).read_text(encoding="utf-8"))
+                except OSError as exc:
+                    raise AICLError("E-PYBIND-017", f"Cannot read declarations file: {exc}") from exc
+                except json.JSONDecodeError as exc:
+                    raise AICLError("E-PYBIND-017", f"Invalid declarations JSON: {exc.msg}") from exc
+                if not isinstance(declarations, dict):
+                    raise AICLError("E-PYBIND-017", "Declarations file must contain a JSON object")
+            document = load_manifest(args.module, args.symbols, declarations=declarations)
             if args.pretty:
                 print(json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2))
             else:

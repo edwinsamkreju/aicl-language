@@ -40,8 +40,8 @@ The design target is an AI-native programming system. Canonical typed IR and the
 - [x] Add optional CPython AST backend 0.1 for the checked pure-function subset.
 - [x] Verify backend/reference-interpreter parity and CLI execution on Python 3.11 and 3.12.
 - [x] Add CI microbenchmarks separating parse, compile/setup, and warmed execution costs on Python 3.11 and 3.12.
-- [x] Add selected-symbol Python API manifests with strict annotation mapping, deterministic hashes, and package metadata.
-- [x] Add an in-process Python binding runtime with manifest revalidation, explicit per-function grants, argument validation, and return validation.
+- [x] Add selected-symbol Python API manifests with annotation and reviewed explicit-signature modes, deterministic hashes, package metadata, and interpreter identity.
+- [x] Add an in-process Python binding runtime with manifest revalidation, explicit per-function grants, bounded pass-by-value conversion, argument/result validation, and awaitable rejection.
 - [ ] Define AICL source-level Python imports and host-call semantics in a versioned language/IR revision.
 - [ ] Add enforceable process isolation, resource quotas, cancellation, and safe handling for untrusted host calls.
 - [ ] Expand type conversion to options/results, records, tensor/array views, and explicit ownership/lifetime rules.

@@ -13,6 +13,10 @@ def add(left: int, right: int) -> int:
     return left + right
 
 
+def passthrough(value):
+    return value
+
+
 def label(value: str, *, prefix: str = "x") -> str:
     return prefix + value
 
@@ -30,14 +34,27 @@ def mutate(values: list[int]) -> list[int]:
     return values
 
 
+def echo_nested(values: list[list[int]]) -> list[list[int]]:
+    return values
+
+
+def make_awaitable(value: int) -> int:
+    async def result():
+        return value
+    return result()
+
+
 @pytest.fixture()
 def module(monkeypatch):
     result = ModuleType("aicl_runtime_fixture")
     result.add = add
+    result.passthrough = passthrough
     result.label = label
     result.posonly = posonly
     result.invalid_return = invalid_return
     result.mutate = mutate
+    result.echo_nested = echo_nested
+    result.make_awaitable = make_awaitable
     monkeypatch.setitem(sys.modules, result.__name__, result)
     return result
 
@@ -121,3 +138,45 @@ def test_runtime_bounds_list_size_and_nesting(module):
     )
     with pytest.raises(AICLError, match="10000-item list limit"):
         runtime.call("mutate", [[0] * 10_001])
+
+
+
+def test_runtime_revalidates_and_invokes_explicit_unannotated_function(module):
+    declaration = {
+        "passthrough": {
+            "parameters": [{
+                "name": "value",
+                "type": "i64",
+                "kind": "positional_or_keyword",
+                "required": True,
+            }],
+            "return_type": "i64",
+        }
+    }
+    manifest = build_manifest(module, ["passthrough"], declarations=declaration)
+    runtime = PythonBindingRuntime.bind(
+        manifest,
+        grants={"python:aicl_runtime_fixture.passthrough"},
+    )
+    assert runtime.call("passthrough", [42]) == 42
+
+
+def test_runtime_bounds_total_nested_list_items(module):
+    manifest = build_manifest(module, ["echo_nested"])
+    runtime = PythonBindingRuntime.bind(
+        manifest,
+        grants={"python:aicl_runtime_fixture.echo_nested"},
+    )
+    with pytest.raises(AICLError, match="100000-item aggregate value limit"):
+        runtime.call("echo_nested", [[index for index in range(10_000)] for _ in range(11)])
+
+
+
+def test_runtime_rejects_awaitable_host_results(module):
+    manifest = build_manifest(module, ["make_awaitable"])
+    runtime = PythonBindingRuntime.bind(
+        manifest,
+        grants={"python:aicl_runtime_fixture.make_awaitable"},
+    )
+    with pytest.raises(AICLError, match="Awaitable host-call results"):
+        runtime.call("make_awaitable", [1])

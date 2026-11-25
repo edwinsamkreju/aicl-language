@@ -30,19 +30,17 @@ f norm(x:Tensor[f32, 128])->f32 !host(math.sqrt) = ...
 
 This is illustrative only; it is not accepted AICL syntax or a current implementation.
 
-**First slice implemented:** `aicl py-manifest MODULE SYMBOL...` emits a deterministic, compact manifest for explicitly selected, type-annotated module-level functions. The versioned contract is `spec/aicl-python-bindings-0.1.schema.json`; the implementation is `src/aicl/python_interop/manifest.py`. It rejects unsupported annotations, variadic/async exports, classes, and dynamic guesses. It records a canonical hash and host capability name, but does not execute the function. Module imports execute package initialization, so manifest generation is restricted to trusted environments.
+**First slice implemented:** `aicl py-manifest MODULE SYMBOL...` emits a deterministic, compact manifest for explicitly selected module-level functions. Bindings 0.2 accepts annotations or reviewed explicit signatures for unannotated/native APIs. The versioned contract is `spec/aicl-python-bindings-0.2.schema.json`; 0.1 remains archived. It rejects unsupported AICL types, variadic calling conventions, classes, and dynamic guesses. It records package/distribution and Python interpreter identity, signature-verification status, a canonical hash, and a host capability name. Module imports execute package initialization, so manifest generation is restricted to trusted environments.
 
 **Second slice implemented:** `PythonBindingRuntime` revalidates a manifest against the installed package, requires explicit per-export capability grants, validates positional and keyword arguments against supported AICL types, and checks return values. It is an in-process bridge for trusted Python applications, not a sandbox. AICL source-level imports/host calls, process isolation, and quotas remain unimplemented.
 
-The full runtime interoperability design must still define:
-- A versioned module-binding manifest containing exported symbols, signatures, type mappings, package identity, and version constraints.
-- A typed value-conversion boundary between AICL values and Python objects.
-- Explicit host-call declarations and capability grants; no ambient arbitrary module access.
-- Effect annotations for calls that can access files, networks, processes, clocks, or mutable external state.
-- Error conversion, exception semantics, cancellation, and resource limits.
-- Reproducible environment resolution and dependency locking.
-- A policy for native extensions and packages with platform-specific behavior.
-- Conformance tests against the exact supported Python/package versions.
+Remaining language/runtime work:
+- AICL source-level imports and host-call declarations, backed by a versioned language/IR revision.
+- Capability grants carried by checked program artifacts and enforced by a supervised host-call worker.
+- Process isolation, timeouts, memory/CPU quotas, cancellation, and stable error/traceback mapping.
+- Rich value conversion for options/results, records, typed arrays/tensors, buffer ownership, and lifetime rules.
+- Reproducible Python environment and lockfile resolution, including native ABI/platform identity.
+- Conformance tests against exact Python/package versions, plus mixed-language project examples.
 
 Start with pure, deterministic library functions and narrow data types. Expand to stateful or effectful libraries only after the capability and isolation model is enforceable.
 
@@ -85,13 +83,13 @@ AICL should not claim lower token use simply because its own source is shorter. 
 ## Delivery sequence
 
 1. Stabilize the current CPython backend and its differential test coverage.
-2. Define AICL source-level host-call semantics and a versioned IR representation that reuses the capability naming established by the in-process bridge.
-3. Extend the initial scalar/list type map to structured values, arrays, and ownership-aware conversions.
-4. Prototype pure-function bindings for a small, well-understood standard-library surface.
-5. Add a controlled third-party package adapter and lockfile/environment metadata.
-6. Add bidirectional Python↔AICL embedding APIs.
-7. Add developer-tool adapters and test real mixed-language projects.
-8. Compare equivalent mixed-language tasks with Python-only baselines using provider-reported agent usage and end-to-end correctness.
+2. Define AICL source-level Python imports and host-call effects in a versioned IR revision.
+3. Add a supervised, isolated worker for granted host calls before exposing imports to untrusted AICL.
+4. Extend scalar/list conversions to options/results, records, and typed arrays with explicit ownership.
+5. Add Python environment/lockfile resolution and reproducible builds.
+6. Add bidirectional Python↔AICL embedding and developer-tool adapters.
+7. Test representative native-extension and pure-Python package integrations.
+8. Compare mixed-language workflows against Python-only baselines with provider-reported usage.
 
 ## Success criteria
 
