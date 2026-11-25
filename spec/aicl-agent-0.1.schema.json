@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicl.invalid/spec/aicl-agent-0.1.schema.json",
+  "title": "AICL Agent Protocol 0.1 request schema",
+  "description": "JSONL request envelope for bounded AICL inspection, verification, and hash-guarded patching.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["protocol", "op", "target"],
+      "properties": {
+        "protocol": { "const": "aicl-agent/0.1" },
+        "op": { "const": "inspect" },
+        "target": { "const": "module" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["protocol", "op", "target", "name"],
+      "properties": {
+        "protocol": { "const": "aicl-agent/0.1" },
+        "op": { "const": "inspect" },
+        "target": { "const": "function" },
+        "name": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["protocol", "op", "target", "id"],
+      "properties": {
+        "protocol": { "const": "aicl-agent/0.1" },
+        "op": { "const": "inspect" },
+        "target": { "const": "node" },
+        "id": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["protocol", "op"],
+      "properties": {
+        "protocol": { "const": "aicl-agent/0.1" },
+        "op": { "const": "check" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["protocol", "op", "patch"],
+      "properties": {
+        "protocol": { "const": "aicl-agent/0.1" },
+        "op": { "const": "patch" },
+        "patch": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  ]
+}

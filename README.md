@@ -4,7 +4,9 @@
 
 Copyright © 2026 Edwin Sam K Reju. All rights reserved. See [COPYRIGHT.md](COPYRIGHT.md).
 
-AICL separates model-facing compact syntax (**AICL-C**) from compiler-facing canonical typed representation (**AICL-IR**). The repository contains an AICL 0.1 language prototype plus an experimental **AICL Patch Text 0.2** profile for smaller AI-generated edits.
+AICL is being designed around an AI-first execution loop: agents inspect small typed context slices, propose hash-guarded semantic edits, and verify the result through machine-readable interfaces. Human-readable source is a secondary debugging and review surface, not the centre of the workflow.
+
+AICL separates model-facing compact syntax (**AICL-C**) from compiler-facing canonical typed representation (**AICL-IR**). The repository contains an AICL 0.1 language prototype, experimental **AICL Patch Text 0.2**, and **AICL Agent Protocol 0.1** for bounded context retrieval, verification, and patch application.
 
 > **Status:** early research prototype. Not a production compiler or secure general-purpose runtime. Token-efficiency claims for complete AI programming workflows have not been demonstrated.
 
@@ -12,9 +14,9 @@ AICL separates model-facing compact syntax (**AICL-C**) from compiler-facing can
 
 Requires Python 3.11 or later.
 
-~~~
+~~~bash
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
 python -m pip install -e .
 python -m pip install pytest
 pytest
@@ -22,12 +24,57 @@ pytest
 
 Check and run an example:
 
-~~~
+~~~bash
 aicl check examples/clamp.aicl
 aicl run examples/clamp.aicl --function clamp --args '[15, 0, 10]'
 ~~~
 
 Expected output: **{"result": 10}**.
+
+## AI-first agent interface 0.1
+
+The agent interface is the preferred automation surface. It uses one JSON request per line on stdin and emits exactly one compact JSON response per request on stdout. It is designed for tool adapters and autonomous coding loops, not interactive human use.
+
+Inspect the module signature index without sending function bodies:
+
+~~~bash
+printf '%s\\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"module"}' | aicl agent examples/clamp.aicl
+~~~
+
+Request only one function's typed IR tree:
+
+~~~bash
+printf '%s\\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"function","name":"clamp"}' | aicl agent examples/clamp.aicl
+~~~
+
+Request only one expression subtree:
+
+~~~bash
+printf '%s\\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"node","id":"n:clamp:body/right"}' | aicl agent examples/clamp.aicl
+~~~
+
+Run a structured verification request:
+
+~~~bash
+printf '%s\\n' '{"protocol":"aicl-agent/0.1","op":"check"}' | aicl agent examples/clamp.aicl
+~~~
+
+Apply a patch through the same interface. The patch is checked against the exact canonical module hash and the candidate module is type-checked before an atomic file replacement:
+
+~~~bash
+python - <<'PY' | aicl agent examples/patchable.aicl
+import json
+from aicl.ir import module_hash
+from aicl.syntax import parse_module
+from pathlib import Path
+path = Path("examples/patchable.aicl")
+base = module_hash(parse_module(path.read_text(encoding="utf-8")))
+patch = f"aicl-patch 0.2\\nbase {base}\\nnode scale n:scale:body/right = 3\\n"
+print(json.dumps({"protocol": "aicl-agent/0.1", "op": "patch", "patch": patch}))
+PY
+~~~
+
+Supported operations are inspect (module, function, or node), check, and patch. A process accepts multiple JSONL requests. Errors are structured JSON responses with stable error codes; a non-zero process exit code indicates that at least one request failed. The request contract is [machine-readable](spec/aicl-agent-0.1.schema.json); the implementation is in [src/aicl/agent.py](src/aicl/agent.py).
 
 ## AICL-C 0.1
 
@@ -47,9 +94,7 @@ The current language subset includes scalar and list types, pure functions, expr
 
 ## Node-level edits with AICL Patch Text 0.2
 
-The first useful AI-efficiency improvement is not another keyword abbreviation. It is reducing the amount of code an agent must resend for a small edit.
-
-Instead of replacing an entire function body, a model can address an expression by its IR node ID:
+The important AI-efficiency improvement is reducing the amount of code an agent must resend for a small edit. An agent can target an expression by its IR node ID:
 
 ~~~
 aicl-patch 0.2
@@ -57,95 +102,46 @@ base sha256:<full canonical module hash>
 node scale n:scale:body/right = 3
 ~~~
 
-For the example function **scale(x) = x * 2**, this replaces only the right-hand literal node. The patch engine checks the full base hash, verifies that the addressed node belongs to the named function, rejects overlapping edits, applies all edits transactionally, and type-checks the complete candidate before writing it.
+The patch engine checks the full base hash, verifies that the addressed node belongs to the named function, rejects overlapping edits, applies operations transactionally, and type-checks the complete candidate before writing it.
 
-Compact patch files (.aiclp) and the existing JSON patch format are accepted by:
+Run the patch example:
 
 ~~~
 aicl patch examples/patchable.aicl examples/patch_scale_node.aiclp
 ~~~
 
-The sample file is tied to the exact base hash of examples/patchable.aicl; regenerate its hash after changing that source. Node IDs are paths within that immutable base module, not permanent identities across arbitrary rewrites.
-
 See [the patch grammar](spec/aicl-patch-0.2.ebnf) and [the working example](examples/patch_scale_node.aiclp).
 
-## Patch-payload microbenchmark
+## Existing measurements
 
-For one illustrative node edit, the compact patch text is **126 characters** versus **192 characters** for an equivalent minified JSON patch: a **34.38% character reduction** in this specific fixture.
+The 100-task paired corpus measured 22.59% fewer source characters, 5.88% fewer source tokens, and 2.06% fewer tokens for shared prompt plus source on that fixed narrow corpus. These counts do not measure model-generated completions or complete agent workflow usage.
 
-Run the reproducible microbenchmark:
-
-~~~
-python benchmarks/compare_patch_payloads.py
-~~~
-
-For tokenizer measurements, install the optional benchmark dependency:
-
-~~~
-python -m pip install -e '.[bench]'
-python benchmarks/compare_patch_payloads.py --encoding cl100k_base
-~~~
-
-Character count is not token count. This single-patch microbenchmark does not measure task success, context retrieval, retries, or full agent workflow cost.
-
-## Major milestone: 100 equivalent Python/AICL tasks
-
-The milestone is implemented as a reproducible benchmark suite: **100 paired pure-function tasks and 500 identical test cases** across ten supported task families.
-
-~~~
-python -m pip install -e '.[test,bench]'
-python benchmarks/generate_suite.py --output /tmp/paired_suite.json
-pytest
-python benchmarks/run_equivalent_tasks.py --suite /tmp/paired_suite.json --encoding cl100k_base --repeats 20 --json-out benchmark-results.json
-~~~
-
-The runner checks Python/AICL output type and value parity, records interpreter setup and local runtime diagnostics, and counts both source tokens and a shared task-description prompt corpus when tiktoken is installed. GitHub Actions runs it on Python 3.11 and 3.12 and uploads the JSON results as build artifacts.
-
-### First hosted result — 24 November 2026
-
-Both CI jobs passed: 500 paired cases each, **zero mismatches**. Using tiktoken's cl100k_base encoding, this fixed source corpus measured:
-
-| Measurement | Python | AICL | AICL reduction |
-|---|---:|---:|---:|
-| Source characters | 5,667 | 4,387 | 22.59% |
-| Source tokens | 1,888 | 1,777 | 5.88% |
-| Shared task prompt + source tokens | 5,384 | 5,273 | 2.06% |
-
-The shared task-description prompt corpus accounts for 3,496 tokens on both sides. The source-token difference is 111 tokens; once the identical prompt is included, the measured payload difference is 111 of 5,384 tokens. The result is therefore a modest source-serialization advantage on this deliberately narrow suite, not evidence of major overall AI savings.
-
-The runtime diagnostic ran 10,000 calls per language. On Python 3.11, the observed averages were 0.111 microseconds per CPython call and 1.295 microseconds per AICL reference-interpreter call. On Python 3.12, they were 0.147 and 2.673 microseconds respectively. The prototype interpreter is slower in this test; these figures compare a Python-hosted AST interpreter with CPython function calls and are not a native compiler comparison.
-
-See [the full benchmark protocol and run record](docs/EQUIVALENT_TASK_BENCHMARK.md) and [GitHub Actions run 49](https://github.com/edwinsamkreju/aicl-language/actions/runs/45312741478), which contains downloadable JSON artifacts for both Python versions.
-
-**Measurement boundary:** these are tokenizer counts for fixed task prompts and checked-in source, not observed model-generated completions or complete AI-agent workflows. No model is called, so edit/debug/retry/tool traffic and end-to-end model token usage remain unmeasured. Runtime compares CPython functions with a Python-hosted AICL reference interpreter; it is not a native compiler comparison. The benchmark covers only functions expressible in the current AICL 0.1 subset and uses five test cases per task. See [the benchmark protocol](docs/EQUIVALENT_TASK_BENCHMARK.md) before interpreting results.
+The AICL reference interpreter was slower than direct CPython calls in the recorded diagnostic. This is a Python-hosted AST interpreter comparison, not a native compiler comparison. See [the full benchmark protocol](docs/EQUIVALENT_TASK_BENCHMARK.md) and [test report](docs/TEST_REPORT.md).
 
 ## Live-agent experiment framework
 
-The next experiment has a separate protocol and trace-analysis tool. It is designed to compare complete, paired agent runs using actual provider-reported usage for every create, inspect, patch, test, and repair request. Start with the predefined [10-task, two-trial pilot](benchmarks/live_agent/pilot_task_ids.json), and follow the [live-agent experiment protocol](docs/LIVE_AGENT_EXPERIMENT.md) and [run checklist](benchmarks/live_agent/AGENT_RUN_PROTOCOL.md). Import normalized request traces with:
+The live-agent A/B protocol, request-level trace schema, deterministic 10-task/two-trial pilot, and trace analyzer are implemented. The framework requires actual provider-reported usage for every model request. No live agent comparison has been performed; the analyzer does not invoke a model by itself.
 
-~~~
-python benchmarks/analyze_agent_traces.py --input pilot-traces.jsonl --output pilot-report.json
-~~~
-
-This framework does not itself invoke a model. No live agent comparison has been performed; the report requires real provider usage receipts and rejects unpaired or mixed-model data. See the [trace schema](benchmarks/live_agent/trace.schema.json).
+See [the live-agent experiment protocol](docs/LIVE_AGENT_EXPERIMENT.md), [run checklist](benchmarks/live_agent/AGENT_RUN_PROTOCOL.md), and [trace schema](benchmarks/live_agent/trace.schema.json).
 
 ## Repository structure
 
 ~~~
-src/aicl/                 Parser, type checker, typed IR, interpreter, patcher, CLI
-spec/                     AICL-C grammar, IR schema, compact patch grammar
+src/aicl/                 Parser, type checker, typed IR, agent protocol, interpreter, patcher, CLI
+spec/                     AICL-C grammar, IR schema, agent request schema, compact patch grammar
 examples/                 AICL programs and compact patch example
-benchmarks/               Token, patch, and equivalent-task benchmarks
-tests/                    Language, patch, and benchmark-corpus tests
+benchmarks/               Token, patch, equivalent-task and live-agent benchmarks
+tests/                    Language, agent protocol, patch, and benchmark tests
 docs/                     Benchmark protocol, design decisions, engineering backlog
-.github/workflows/         GitHub Actions CI
 ~~~
 
-## Limitations and next research
+## AI-first design constraints
 
-AICL-C 0.1 remains a small subset: imports, records, generics, tensor shapes, async/streams, non-pure effects, capability grants, host calls, binary IR encoding, native-token vocabulary, compiler lowering, MLIR/StableHLO/LLVM/Wasm backends, and a hardened sandbox are not implemented.
+The long-term target is a machine-optimized programming system. The canonical IR and agent protocol should become the primary interface; compact source is a serialization/debugging layer. The next layers are binary canonical IR transport, stable semantic node identities, incremental diagnostics, dependency-aware context retrieval, and compiler lowering. These capabilities are not implemented yet.
 
-The 100-task milestone measures a bounded language subset, not general-purpose programming. The next major research step is a controlled live-agent trial with the same model, model-specific tokenizer, prompts, tests, tool permissions and repair policy for both languages, with complete traces and multiple randomized trials. It should report total tokens, correctness, retries, completion rate and cost without conflating source compactness with workflow efficiency.
+AICL-C 0.1 remains a narrow subset: imports, records, generics, tensor shapes, async/streams, non-pure effects, capability grants, host calls, binary IR encoding, native-token vocabulary, compiler lowering, MLIR/StableHLO/LLVM/Wasm backends, and a hardened sandbox are not implemented.
+
+No general AI-efficiency claim is justified until controlled live-agent trials report provider-reported usage, task completion, correctness, retries, tool calls, latency, and cost.
 
 See [ROADMAP.md](ROADMAP.md), [the benchmark protocol](docs/EQUIVALENT_TASK_BENCHMARK.md) and [docs/INITIAL_BACKLOG.md](docs/INITIAL_BACKLOG.md).
 

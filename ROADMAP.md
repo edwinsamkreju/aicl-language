@@ -2,48 +2,45 @@
 
 Copyright © 2026 Edwin Sam K Reju. All rights reserved.
 
-This roadmap adapts the project's report into small, verifiable increments. It is not a schedule commitment.
+The design target is an AI-native programming system. The canonical typed IR and agent protocol are intended to become the primary machine interface; compact source remains a serialization/debugging layer until the evidence justifies a lower-level representation.
 
-## Milestone 0 — research spike (current)
+## Milestone 0 — research prototype
 
 - [x] Define AICL-C 0.1 scalar/list subset.
 - [x] Implement parser, type checker, typed canonical IR, deterministic module hash.
 - [x] Implement bounded reference interpreter and hash-guarded whole-body patches.
 - [x] Add stable-node patch operations and compact AICL Patch Text 0.2.
-- [x] Add examples, tests, CI, and source-token / patch-payload microbenchmarks.
-- [x] Define a deterministic 100-task paired Python/AICL corpus with 500 matched input cases.
-- [x] Add correctness, source-size, tokenizer-payload and runtime-diagnostic harnesses; upload CI JSON reports.
-- [x] Run and review hosted benchmark artifacts on Python 3.11 and 3.12; both report 500/500 matched cases.
-- [x] Define a paired live-agent A/B protocol, request-level trace schema, deterministic 10-task/two-trial pilot, and trace analyzer.
-- [ ] Execute the live-agent pilot with one pinned model snapshot and provider-reported request usage; review quality and budget before scaling.
-- [ ] Measure compact node patches and complete agent workflows with actual target models and model-specific tokenizers.
-- [ ] Expand beyond the prototype subset before making general-purpose language comparisons.
+- [x] Add deterministic 100-task paired Python/AICL benchmark.
+- [x] Add source-size, tokenizer-payload, correctness, and runtime-diagnostic harnesses.
+- [x] Define paired live-agent A/B protocol, request-level trace schema, 10-task/two-trial pilot, and trace analyzer.
+- [x] Add AICL Agent Protocol 0.1: JSONL requests, bounded module/function/node inspection, structured checks, and hash-guarded patch operations.
+- [ ] Execute the live-agent pilot with one pinned model snapshot and provider-reported request usage.
+- [ ] Measure total agent workflow tokens, success rate, retries, tool calls, latency, and cost.
 
-## Milestone 1 — language core
+## Milestone 1 — machine-first semantic interface
 
-- [ ] Publish a complete grammar and operator/evaluation-order specification.
-- [ ] Add records, options/results, and more complete static semantics.
-- [ ] Add parser round-trip and malformed-input conformance suites.
-- [ ] Decide stable symbol, module, and dependency identity rules.
+- [ ] Version the IR independently from the Python implementation.
+- [ ] Add stable semantic identities that survive unrelated tree edits.
+- [ ] Add compact binary IR encoding and incremental serialization.
+- [ ] Add structured diagnostics with exact node IDs and machine-actionable repair hints.
+- [ ] Add dependency, import, symbol-index, and incremental invalidation models.
+- [ ] Define canonical type constraints for records, options/results, generics, and tensor shapes.
 
-## Milestone 2 — canonical IR
+## Milestone 2 — agent-native edit and verification loop
 
-- [ ] Specify a versioned IR schema independently of Python implementation details.
-- [ ] Evolve prototype path IDs into documented node-identity/version rules.
-- [ ] Add canonical serialization compatibility tests and structured patch conflict diagnostics.
+- [ ] Add multi-edit transactions with semantic conflict detection and merge support.
+- [ ] Add dependency-aware context retrieval and automatic minimal context packing.
+- [ ] Add explicit edit preconditions, postconditions, and test-oracle binding.
+- [ ] Add a persistent agent service/stdio transport with request correlation and cancellation.
+- [ ] Add agent adapters and benchmark real create/inspect/patch/test/repair loops.
 
-## Milestone 3 — compiler/runtime MVP
+## Milestone 3 — execution and compilation
 
-- [ ] Select one backend based on research-spike evidence.
-- [ ] Implement lowering and interpreter/backend parity tests.
-- [ ] Design capability enforcement and host ABI before enabling external effects.
-
-## Milestone 4 — agent protocol
-
-- [ ] Add compact context retrieval and structured diagnostics.
-- [ ] Add agent create/inspect/patch/test/repair integration tests.
-- [ ] Measure total prompt/completion tokens through success or retry limit.
+- [ ] Design capability grants and effect boundaries before enabling external effects.
+- [ ] Select a compiler backend from benchmark evidence.
+- [ ] Implement lowering and backend/reference-interpreter parity tests.
+- [ ] Add deterministic, resource-bounded execution and hardened isolation.
 
 ## Release gate
 
-No token-efficiency claim or public beta until reproducible equivalent-task benchmarks demonstrate lower total workflow tokens with equivalent correctness and acceptable security results.
+No general AI-efficiency claim or public beta until independent, reproducible equivalent-task trials show lower complete workflow cost at equivalent correctness, with security and robustness results published.
