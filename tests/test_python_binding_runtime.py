@@ -168,7 +168,7 @@ def test_runtime_bounds_total_nested_list_items(module):
         grants={"python:aicl_runtime_fixture.echo_nested"},
     )
     with pytest.raises(AICLError, match="100000-item aggregate value limit"):
-        runtime.call("echo_nested", [[index for index in range(10_000)] for _ in range(11)])
+        runtime.call("echo_nested", [[[index for index in range(10_000)] for _ in range(11)]])
 
 
 
