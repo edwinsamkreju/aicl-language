@@ -30,7 +30,9 @@ f norm(x:Tensor[f32, 128])->f32 !host(math.sqrt) = ...
 
 This is illustrative only; it is not accepted AICL syntax or a current implementation.
 
-The actual design must define:
+**First slice implemented:** `aicl py-manifest MODULE SYMBOL...` emits a deterministic, compact manifest for explicitly selected, type-annotated module-level functions. The versioned contract is `spec/aicl-python-bindings-0.1.schema.json`; the implementation is `src/aicl/python_interop/manifest.py`. It rejects unsupported annotations, variadic/async exports, classes, and dynamic guesses. It records a canonical hash and host capability name, but does not execute the function. Module imports execute package initialization, so manifest generation is restricted to trusted environments.
+
+The runtime interoperability design must define:
 - A versioned module-binding manifest containing exported symbols, signatures, type mappings, package identity, and version constraints.
 - A typed value-conversion boundary between AICL values and Python objects.
 - Explicit host-call declarations and capability grants; no ambient arbitrary module access.
@@ -82,7 +84,7 @@ AICL should not claim lower token use simply because its own source is shorter. 
 
 1. Stabilize the current CPython backend and its differential test coverage.
 2. Specify a language-neutral host-call and capability model.
-3. Specify a compact Python module manifest and type mapping.
+3. Extend the initial signature-only manifest with a validated type mapping and package/environment identity.
 4. Prototype pure-function bindings for a small, well-understood standard-library surface.
 5. Add a controlled third-party package adapter and lockfile/environment metadata.
 6. Add bidirectional Python↔AICL embedding APIs.

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicl.invalid/spec/aicl-python-bindings-0.1.schema.json",
+  "title": "AICL Python binding manifest 0.1",
+  "type": "object",
+  "required": ["binding_hash", "schema", "module", "provider", "exports"],
+  "additionalProperties": false,
+  "properties": {
+    "binding_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "schema": {"const": "aicl-python-bindings/0.1"},
+    "module": {"type": "string", "minLength": 1},
+    "provider": {
+      "oneOf": [
+        {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "stdlib"}}, "additionalProperties": false},
+        {"type": "object", "required": ["kind", "distributions"], "properties": {"kind": {"const": "distribution"}, "distributions": {"type": "array", "items": {"type": "object", "required": ["name", "version"], "properties": {"name": {"type": "string"}, "version": {"type": "string"}}, "additionalProperties": false}}}, "additionalProperties": false},
+        {"type": "object", "required": ["kind"], "properties": {"kind": {"const": "unknown"}}, "additionalProperties": false}
+      ]
+    },
+    "exports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "kind", "effect", "capability", "parameters", "return_type"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+          "kind": {"const": "function"},
+          "effect": {"const": "host"},
+          "capability": {"type": "string", "minLength": 1},
+          "parameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type", "kind", "required"],
+              "additionalProperties": false,
+              "properties": {
+                "name": {"type": "string"},
+                "type": {"$ref": "#/$defs/type"},
+                "kind": {"enum": ["positional_only", "positional_or_keyword", "keyword_only"]},
+                "required": {"type": "boolean"}
+              }
+            }
+          },
+          "return_type": {"$ref": "#/$defs/type"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "type": {
+      "oneOf": [
+        {"enum": ["i64", "f64", "bool", "Str"]},
+        {"type": "string", "pattern": "^List\\[(i64|f64|bool|Str|List\\[.*\\])\\]$"}
+      ]
+    }
+  }
+}

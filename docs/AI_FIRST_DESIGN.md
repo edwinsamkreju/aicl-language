@@ -36,6 +36,10 @@ The optional backend is isolated under `src/aicl/backend/python/`. It type-check
 
 This is not a hardened sandbox: it has no explicit step/depth budget, capability system, or process isolation. It must not be used to execute untrusted AICL until those controls exist. The backend does not alter AICL source syntax, canonical IR, hashes, patch encoding, or JSONL agent responses. Compilation overhead and warmed execution performance still require measurement before making performance claims.
 
+## Python API discovery
+
+A signature-only Python binding manifest can be generated for an explicitly selected set of annotated module functions. Its deterministic hash and compact JSON layout let agents retrieve a few exact signatures instead of source files or full package documentation. Manifest generation imports trusted modules and does not call their functions. A manifest does not grant execution permission; typed host-call dispatch and enforceable capability grants remain future work.
+
 ## Canonical IR contract and transport
 
 The repository now publishes `spec/aicl-ir-0.1.schema.json` as a language-neutral contract for the canonical typed IR document. The CLI supports `aicl ir FILE --compact` for whitespace-minimized canonical JSON and `--hash-only` for content-addressed module identity. Both use the same canonical IR and hash semantics as the Python implementation.

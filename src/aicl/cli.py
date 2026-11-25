@@ -40,6 +40,11 @@ def build_parser():
     run.add_argument("--max-steps", type=int, default=100000)
     run.add_argument("--max-depth", type=int, default=128)
 
+    manifest = commands.add_parser("py-manifest", help="emit compact signatures for selected functions in a trusted Python module")
+    manifest.add_argument("module")
+    manifest.add_argument("symbols", nargs="+")
+    manifest.add_argument("--pretty", action="store_true", help="format the manifest for human review")
+
     python_run = commands.add_parser("run-python", help="run a pure AICL module through the optional CPython AST backend")
     python_run.add_argument("file")
     python_run.add_argument("--function", required=True)
@@ -61,6 +66,15 @@ def main(argv=None):
         return run_agent(args.file)
 
     try:
+        if args.command == "py-manifest":
+            from .python_interop import load_manifest
+            document = load_manifest(args.module, args.symbols)
+            if args.pretty:
+                print(json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2))
+            else:
+                print(json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+            return 0
+
         if args.command == "patch":
             digest = apply_patch_file(args.file, args.patch_file)
             print(json.dumps({"status": "patched", "module_hash": digest}, indent=2))
