@@ -49,14 +49,34 @@ class PythonBindingRuntime:
 
         names = []
         declared: dict[str, dict[str, Any]] = {}
+        capabilities = set()
         for entry in exports:
-            if not isinstance(entry, dict) or not isinstance(entry.get("name"), str):
+            if (
+                not isinstance(entry, dict)
+                or not isinstance(entry.get("name"), str)
+                or not isinstance(entry.get("capability"), str)
+            ):
                 raise AICLError("E-PYBIND-020", "Malformed Python export declaration")
             name = entry["name"]
             if name in declared:
                 raise AICLError("E-PYBIND-020", f"Duplicate binding export {name!r}")
             names.append(name)
             declared[name] = entry
+            capabilities.add(entry["capability"])
+
+        if isinstance(grants, str):
+            raise AICLError("E-PYBIND-023", "Capabilities must be an iterable of capability strings")
+        try:
+            granted = frozenset(grants)
+        except TypeError as exc:
+            raise AICLError("E-PYBIND-023", "Capabilities must be an iterable of strings") from exc
+        if not granted:
+            raise AICLError("E-PYBIND-023", "At least one explicit capability grant is required")
+        if not all(isinstance(capability, str) for capability in granted):
+            raise AICLError("E-PYBIND-023", "Capabilities must be strings")
+        unknown = granted - capabilities
+        if unknown:
+            raise AICLError("E-PYBIND-024", f"Grant does not exist in manifest: {sorted(unknown)!r}")
 
         try:
             current = load_manifest(module_name, names)
@@ -68,17 +88,6 @@ class PythonBindingRuntime:
 
         if not isinstance(expected_hash, str) or current != dict(manifest):
             raise AICLError("E-PYBIND-022", "Binding manifest is stale or does not match the installed module")
-
-        available = {entry["capability"] for entry in current["exports"]}
-        try:
-            granted = frozenset(grants)
-        except TypeError as exc:
-            raise AICLError("E-PYBIND-023", "Capabilities must be an iterable of strings") from exc
-        if not all(isinstance(capability, str) for capability in granted):
-            raise AICLError("E-PYBIND-023", "Capabilities must be strings")
-        unknown = granted - available
-        if unknown:
-            raise AICLError("E-PYBIND-024", f"Grant does not exist in manifest: {sorted(unknown)!r}")
 
         return cls(module, {entry["name"]: entry for entry in current["exports"]}, granted)
 

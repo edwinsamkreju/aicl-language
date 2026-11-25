@@ -126,10 +126,12 @@ def build_manifest(module: ModuleType, symbols: list[str] | tuple[str, ...]) -> 
     module_name = getattr(module, "__name__", "")
     if not isinstance(module_name, str) or not module_name:
         raise AICLError("E-PYBIND-001", "Python module must have a non-empty __name__")
-    if not symbols:
+    if not isinstance(symbols, (list, tuple)) or not symbols:
         raise AICLError("E-PYBIND-010", "Select at least one Python export")
     if not all(isinstance(symbol, str) for symbol in symbols):
         raise AICLError("E-PYBIND-002", "Export names must be strings")
+    if any(not _IDENTIFIER.fullmatch(symbol) or symbol.startswith("_") for symbol in symbols):
+        raise AICLError("E-PYBIND-002", "Export names must be public identifiers")
     if len(set(symbols)) != len(symbols):
         raise AICLError("E-PYBIND-011", "Duplicate export requested")
 
@@ -150,6 +152,14 @@ def load_manifest(module_name: str, symbols: list[str]) -> dict[str, Any]:
         _IDENTIFIER.fullmatch(part) for part in module_name.split(".")
     ):
         raise AICLError("E-PYBIND-012", f"Invalid Python module name {module_name!r}")
+    if not isinstance(symbols, (list, tuple)) or not symbols:
+        raise AICLError("E-PYBIND-010", "Select at least one Python export")
+    if not all(isinstance(symbol, str) for symbol in symbols):
+        raise AICLError("E-PYBIND-002", "Export names must be strings")
+    if any(not _IDENTIFIER.fullmatch(symbol) or symbol.startswith("_") for symbol in symbols):
+        raise AICLError("E-PYBIND-002", "Export names must be public identifiers")
+    if len(set(symbols)) != len(symbols):
+        raise AICLError("E-PYBIND-011", "Duplicate export requested")
     try:
         module = importlib.import_module(module_name)
     except Exception as exc:

@@ -37,10 +37,16 @@ def module(monkeypatch):
 
 
 def test_runtime_requires_explicit_capability(module):
-    manifest = build_manifest(module, ["add"])
-    runtime = PythonBindingRuntime.bind(manifest, grants=[])
+    manifest = build_manifest(module, ["add", "label"])
+    runtime = PythonBindingRuntime.bind(
+        manifest,
+        grants={"python:aicl_runtime_fixture.add"},
+    )
+    assert runtime.call("add", [2, 3]) == 5
     with pytest.raises(AICLError, match="Missing capability"):
-        runtime.call("add", [2, 3])
+        runtime.call("label", ["blocked"])
+    with pytest.raises(AICLError, match="At least one explicit"):
+        PythonBindingRuntime.bind(manifest, grants=[])
 
 
 def test_runtime_calls_only_granted_functions_and_checks_types(module):
