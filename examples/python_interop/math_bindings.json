@@ -1,0 +1,13 @@
+{
+  "sqrt": {
+    "parameters": [
+      {
+        "name": "x",
+        "type": "f64",
+        "kind": "positional_only",
+        "required": true
+      }
+    ],
+    "return_type": "f64"
+  }
+}

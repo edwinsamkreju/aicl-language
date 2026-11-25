@@ -53,7 +53,7 @@ aicl run-python examples/clamp.aicl --function clamp --args '[15, 0, 10]'
 
 ## Python ecosystem interoperability
 
-Python compatibility is a strategic design pillar, not just an implementation convenience. AICL is intended to combine its compact, typed, AI-facing representation with CPython execution, access to established Python packages, and adapters to Python developer tooling. The current CPython backend executes the pure AICL subset; direct, typed interoperability with installed Python modules is a separate capability and is not implemented yet. See [the Python interoperability architecture and staged plan](docs/PYTHON_INTEROP_STRATEGY.md).
+Python compatibility is a strategic design pillar, not just an implementation convenience. AICL is intended to combine its compact, typed, AI-facing representation with CPython execution, access to established Python packages, and adapters to Python developer tooling. The optional in-process Python binding API now supports selected, typed Python functions for trusted embedding applications. AICL source-level imports and host calls remain a separate, unimplemented language feature. See [the Python interoperability architecture and staged plan](docs/PYTHON_INTEROP_STRATEGY.md).
 
 ## Compact Python API manifests
 
@@ -65,7 +65,7 @@ aicl py-manifest my_package.math_ops add normalize
 aicl py-manifest my_native_package.operations add --declarations bindings.json
 ~~~
 
-The default JSON is compact and content-addressed, and includes package/distribution and Python interpreter identity. Reviewed declarations provide exact AICL signatures for APIs without annotations; AICL does not guess types. Python embedding applications can use `PythonBindingRuntime` to call selected exports only with explicit per-function capability grants and a matching manifest hash. This is an in-process bridge, not a sandbox; use only trusted packages. Importing a module runs its initialization code. AICL source-level imports and host-call syntax are not implemented yet. See [Python binding manifests and runtime](docs/PYTHON_BINDINGS.md) and [the versioned schema](spec/aicl-python-bindings-0.2.schema.json).
+The default JSON is compact and content-addressed, and includes package/distribution and Python interpreter identity. Reviewed declarations provide exact AICL signatures for APIs without annotations; AICL does not guess types. Python embedding applications can use `PythonBindingRuntime` to call selected exports only with explicit per-function capability grants and a matching manifest hash. This is an in-process bridge, not a sandbox; use only trusted packages. Importing a module runs its initialization code. AICL source-level imports and host-call syntax are not implemented yet. See [Python binding manifests and runtime](docs/PYTHON_BINDINGS.md), [the versioned schema](spec/aicl-python-bindings-0.2.schema.json), and the [standard-library math.sqrt example](examples/python_interop/math_sqrt.py).
 
 ## AI-first agent interface 0.1
 
@@ -166,7 +166,7 @@ See [the live-agent experiment protocol](docs/LIVE_AGENT_EXPERIMENT.md), [run ch
 src/aicl/                 Parser, type checker, typed IR, agent protocol, interpreter, patcher, CLI
 src/aicl/backend/python/  Optional typed-IR-to-Python-AST backend
 spec/                     AICL-C grammar, IR schema, agent request schema, compact patch grammar
-examples/                 AICL programs and compact patch example
+examples/                 AICL programs, compact patches, Python interoperability sample
 benchmarks/               Token, patch, equivalent-task and live-agent benchmarks
 tests/                    Language, agent protocol, patch, and benchmark tests
 docs/                     Benchmark protocol, design decisions, engineering backlog

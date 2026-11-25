@@ -35,6 +35,8 @@ jobs:
           aicl check examples/clamp.aicl
           aicl run examples/clamp.aicl --function clamp --args '[15, 0, 10]'
           aicl run-python examples/clamp.aicl --function clamp --args '[15, 0, 10]'
+          aicl py-manifest math sqrt --declarations examples/python_interop/math_bindings.json
+          python examples/python_interop/math_sqrt.py
           printf '%s\n' '{"protocol":"aicl-agent/0.1","op":"inspect","target":"module"}' | aicl agent examples/clamp.aicl
       - name: Upload machine-readable benchmark results
         uses: actions/upload-artifact@v4
